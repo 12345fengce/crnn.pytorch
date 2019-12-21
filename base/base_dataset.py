@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2019/11/6 15:08
 # @Author  : zhoujun
-import numpy as np
-from mxnet import nd
-from mxnet.gluon.data import Dataset
+from torch.utils.data import Dataset
 from data_loader.modules import *
 
 
 class BaseDataSet(Dataset):
-    def __init__(self, data_path: str, img_mode, num_label, alphabet, ignore_chinese_punctuation, remove_blank, pre_processes, **kwargs):
+    def __init__(self, data_path: str, img_mode,num_label, ignore_chinese_punctuation, remove_blank, pre_processes, transform=None, **kwargs):
         """
         :param ignore_chinese_punctuation: 是否转换全角为半角
         """
@@ -16,12 +14,9 @@ class BaseDataSet(Dataset):
         self.data_list = self.load_data(data_path)
         self.img_mode = img_mode
         self.num_label = num_label
+        self.transform = transform
         self.remove_blank = remove_blank
-        self.alphabet = alphabet
         self.ignore_chinese_punctuation = ignore_chinese_punctuation
-        self.label_dict = {}
-        for i, char in enumerate(self.alphabet):
-            self.label_dict[char] = i
         self._init_pre_processes(pre_processes)
 
     def _init_pre_processes(self, pre_processes):
@@ -51,25 +46,14 @@ class BaseDataSet(Dataset):
             data = aug(data)
         return data
 
-    def label_enocder(self, label):
-        """
-        对label进行处理，将输入的label字符串转换成在字母表中的索引
-        :param label: label字符串
-        :return: 索引列表
-        """
-        tmp_label = nd.zeros(self.num_label, dtype=np.float32) - 1
-        for i, ch in enumerate(label):
-            tmp_label[i] = self.label_dict[ch]
-        return tmp_label
-
     def get_sample(self, index):
         raise NotImplementedError
 
     def __getitem__(self, index):
         img, label = self.get_sample(index)
         img = self.apply_pre_processes(img)
-        img = nd.array(img, dtype=img.dtype)
-        label = self.label_enocder(label)
+        if self.transform is not None:
+            img = self.transform(img)
         return img, label
 
     def __len__(self):

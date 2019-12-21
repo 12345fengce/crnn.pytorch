@@ -1,145 +1,143 @@
-from mxnet.gluon import nn, HybridBlock
-from mxnet.gluon.model_zoo.vision.resnet import BasicBlockV2
-from mxnet.gluon.model_zoo.vision.densenet import _make_dense_block
+from torch import nn
+from models.modules.basic import ConvBnRelu
+from torchvision.models.densenet import _DenseBlock
 
 
-class VGG(HybridBlock):
-    def __init__(self, **kwargs):
-        super(VGG, self).__init__()
-        with self.name_scope():
-            self.features = nn.HybridSequential()
-            with self.features.name_scope():
-                self.features.add(
-                    # conv layer
-                    nn.Conv2D(kernel_size=(3, 3), padding=(1, 1), channels=64, activation="relu"),
-                    nn.BatchNorm(),
-                    nn.MaxPool2D(pool_size=(2, 2), strides=(2, 2)),
+class VGG(nn.Module):
+    def __init__(self, in_channels, **kwargs):
+        super().__init__()
+        self.features = nn.Sequential(
+            # conv layer
+            ConvBnRelu(in_channels=in_channels, out_channels=64, kernel_size=(3, 3), padding=(1, 1)),
+            nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2)),
 
-                    # second conv layer
-                    nn.Conv2D(kernel_size=(3, 3), padding=(1, 1), channels=128, activation="relu"),
-                    nn.BatchNorm(),
-                    nn.MaxPool2D(pool_size=(2, 2), strides=(2, 2)),
+            # second conv layer
+            ConvBnRelu(in_channels=64, out_channels=128, kernel_size=(3, 3), padding=(1, 1)),
+            nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2)),
 
-                    # third conv layer
-                    nn.Conv2D(kernel_size=(3, 3), padding=(1, 1), channels=256, activation="relu"),
-                    nn.BatchNorm(),
+            # third conv layer
+            ConvBnRelu(in_channels=128, out_channels=256, kernel_size=(3, 3), padding=(1, 1)),
 
-                    # fourth conv layer
-                    nn.Conv2D(kernel_size=(3, 3), padding=(1, 1), channels=256, activation="relu"),
-                    nn.BatchNorm(),
-                    nn.MaxPool2D(pool_size=(2, 2), strides=(2, 1), padding=(0, 1)),
+            # fourth conv layer
+            ConvBnRelu(in_channels=256, out_channels=256, kernel_size=(3, 3), padding=(1, 1)),
+            nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 1), padding=(0, 1)),
 
-                    # fifth conv layer
-                    nn.Conv2D(kernel_size=(3, 3), padding=(1, 1), channels=512, activation="relu"),
-                    nn.BatchNorm(),
+            # fifth conv layer
+            ConvBnRelu(in_channels=256, out_channels=512, kernel_size=(3, 3), padding=(1, 1)),
 
-                    # sixth conv layer
-                    nn.Conv2D(kernel_size=(3, 3), padding=(1, 1), channels=512, activation="relu"),
-                    nn.BatchNorm(),
-                    nn.MaxPool2D(pool_size=(2, 2), strides=(2, 1), padding=(0, 1)),
+            # sixth conv layer
+            ConvBnRelu(in_channels=512, out_channels=512, kernel_size=(3, 3), padding=(1, 1)),
+            nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 1), padding=(0, 1)),
 
-                    # seren conv layer
-                    nn.Conv2D(kernel_size=(2, 2), channels=512, activation="relu"),
-                    nn.BatchNorm()
-                )
+            # seren conv layer
+            ConvBnRelu(in_channels=512, out_channels=512, kernel_size=(2, 2)),
+        )
+        self.out_channels = 512
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def forward(self, x):
         return self.features(x)
 
 
-class ResNet(HybridBlock):
-    def __init__(self, **kwargs):
-        super(ResNet, self).__init__()
-        with self.name_scope():
-            self.features = nn.HybridSequential()
-            with self.features.name_scope():
-                self.features.add(
-                    nn.Conv2D(64, 3, padding=1, use_bias=False),
-                    nn.BatchNorm(),
-                    nn.Activation('relu'),
-                    # nn.MaxPool2D(pool_size=2, strides=2),
-                    nn.Conv2D(64, 2, strides=2, use_bias=False),
-                    BasicBlockV2(64, 1, True),
-                    BasicBlockV2(128, 1, True),
-                    nn.Dropout(0.2),
+class BasicBlockV2(nn.Module):
+    def __init__(self, in_channels, out_channels, stride, downsample=False):
+        super(BasicBlockV2, self).__init__()
 
-                    BasicBlockV2(128, 2, True),
-                    BasicBlockV2(256, 1, True),
-                    nn.Dropout(0.2),
+        self.bn1 = nn.BatchNorm2d(in_channels, momentum=0.9)
+        self.relu1 = nn.ReLU()
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=stride, padding=1, bias=False),
+            nn.BatchNorm2d(out_channels, momentum=0.9),
+            nn.ReLU(),
+            nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1, bias=False)
+        )
+        if downsample:
+            self.downsample = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, stride=stride, bias=False)
+        else:
+            self.downsample = None
 
-                    nn.Conv2D(256, 2, strides=(2, 1), padding=(0, 1), use_bias=False),
+    def forward(self, x):
+        residual = x
+        x = self.bn1(x)
+        x = self.relu1(x)
+        if self.downsample:
+            residual = self.downsample(x)
+        x = self.conv(x)
 
-                    BasicBlockV2(512, 1, True),
-                    nn.BatchNorm(),
-                    nn.Activation('relu'),
+        return x + residual
 
-                    nn.Conv2D(1024, 3, padding=0, use_bias=False),
-                    nn.BatchNorm(),
-                    nn.Activation('relu'),
-                    nn.Conv2D(2048, 2, padding=(0, 1), use_bias=False),
-                    nn.BatchNorm(),
-                    nn.Activation('relu'),
-                )
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+class ResNet(nn.Module):
+    def __init__(self, in_channels, **kwargs):
+        super().__init__()
+        self.features = nn.Sequential(
+            ConvBnRelu(in_channels=in_channels, out_channels=64, kernel_size=(3, 3), padding=(1, 1), bias=False),
+            # nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=2, stride=2, bias=False),
+
+            BasicBlockV2(in_channels=64, out_channels=64, stride=1, downsample=True),
+            BasicBlockV2(in_channels=64, out_channels=128, stride=1, downsample=True),
+            nn.Dropout(0.2),
+
+            BasicBlockV2(in_channels=128, out_channels=128, stride=2, downsample=True),
+            BasicBlockV2(in_channels=128, out_channels=256, stride=1, downsample=True),
+            nn.Dropout(0.2),
+
+            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=2, stride=(2, 1), padding=(0, 1), bias=False),
+
+            BasicBlockV2(in_channels=256, out_channels=512, stride=1, downsample=True),
+            nn.BatchNorm2d(512),
+            nn.ReLU(),
+
+            ConvBnRelu(in_channels=512, out_channels=1024, kernel_size=3, padding=0, bias=False),
+            ConvBnRelu(in_channels=1024, out_channels=2048, kernel_size=2, padding=(0, 1), bias=False),
+        )
+        self.out_channels = 2048
+
+    def forward(self, x):
         return self.features(x)
 
 
-def _make_transition(num_output_features, pool_stride, pool_pad, dropout):
-    out = nn.HybridSequential(prefix='')
-    out.add(nn.BatchNorm())
-    out.add(nn.Activation('relu'))
-    out.add(nn.Conv2D(num_output_features, kernel_size=1, use_bias=False))
+def _make_transition(in_channels, out_channels, pool_stride, pool_pad, dropout):
+    out = nn.Sequential(
+        nn.BatchNorm2d(in_channels),
+        nn.ReLU(),
+        nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
+    )
     if dropout:
-        out.add(nn.Dropout(dropout))
-    out.add(nn.AvgPool2D(pool_size=2, strides=pool_stride, padding=pool_pad))
+        out.add_module('dropout', nn.Dropout(dropout))
+    out.add_module('pool', nn.AvgPool2d(kernel_size=2, stride=pool_stride, padding=pool_pad))
     return out
 
 
-class DenseNet(HybridBlock):
-    def __init__(self, **kwargs):
+class DenseNet(nn.Module):
+    def __init__(self, in_channels, **kwargs):
         super(DenseNet, self).__init__()
-        with self.name_scope():
-            self.features = nn.HybridSequential()
-            self.features.add(nn.Conv2D(64, 5, padding=2, strides=2, use_bias=False))
-            self.features.add(_make_dense_block(8, 4, 8, 0, 1))
-            self.features.add(_make_transition(128, 2, 0, 0.2))
+        self.features = nn.Sequential(
+            nn.Conv2d(in_channels, 64, 5, padding=2, stride=2, bias=False),
+            _DenseBlock(8, 64, 4, 8, 0),
+            _make_transition(128, 128, 2, 0, 0.2),
 
-            self.features.add(_make_dense_block(8, 4, 8, 0, 2))
-            self.features.add(_make_transition(128, (2, 1), 0, 0.2))
+            _DenseBlock(8, 128, 4, 8, 0),
+            _make_transition(192, 128, (2, 1), 0, 0.2),
 
-            self.features.add(_make_dense_block(8, 4, 8, 0, 3))
+            _DenseBlock(8, 128, 4, 8, 0),
 
-            self.features.add(
-                nn.BatchNorm(),
-                nn.Activation('relu')
-            )
+            nn.BatchNorm2d(192),
+            nn.ReLU()
+        )
+        self.out_channels = 768
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def forward(self, x):
         x = self.features(x)
-        x = x.reshape((0, -1, 1, 0))
+        B, C, H, W = x.shape
+        x = x.reshape((B, C * H, 1, W))
         return x
 
 
 if __name__ == '__main__':
-    import time
-    from mxnet import nd
-    import mxnet as mx
-    from models.modules.seg import UNet, ResNetFPN
+    import torch
 
-    ctx = mx.gpu(0)
-    input = nd.random.uniform(2, 4, (128, 3, 32, 320), ctx=ctx)
-    net = nn.HybridSequential()
-    net.add(ResNetFPN(backbone='resnet18_v1b', channels=1, ctx=ctx, pretrained=True))
-    # net.add(UNet())
-    net.add(ResNet())
-    net.hybridize()
-    net.initialize(ctx=ctx)
-
-    tic = time.time()
-    for i in range(10):
-        y = net(input)
-    all_time = time.time() - tic
-    fps = (input.shape[0] * 10) / all_time
-    print('batch image time: {},fps: {}'.format(all_time / 10, fps))
+    x = torch.zeros(1, 3, 32, 320)
+    net = VGG(3)
+    y = net(x)
     print(y.shape)

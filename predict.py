@@ -4,21 +4,10 @@
 import os
 import cv2
 import numpy as np
-import mxnet as mx
-from mxnet import image, nd
-from mxnet.gluon.data.vision import transforms
+import torch
+from torchvision import transforms
 
 from data_loader import get_transforms
-
-
-def try_gpu(gpu):
-    """If GPU is available, return mx.gpu(0); else return mx.cpu()"""
-    try:
-        ctx = mx.gpu(gpu)
-        _ = nd.array([0], ctx=ctx)
-    except:
-        ctx = mx.cpu()
-    return ctx
 
 
 def decode(preds, alphabet, raw=False):
@@ -29,35 +18,44 @@ def decode(preds, alphabet, raw=False):
         preds_idx = preds
         preds_prob = np.ones_like(preds)
     result_list = []
-    alphabet_size = len(alphabet)
     for word, prob in zip(preds_idx, preds_prob):
         if raw:
             result_list.append((''.join([alphabet[int(i)] for i in word]), prob))
         else:
             result = []
             conf = []
-            for i, index in enumerate(word):
-                if i < len(word) - 1 and word[i] == word[i + 1] and word[-1] != -1:  # Hack to decode label as well
-                    continue
-                if index == -1 or index == alphabet_size - 1:
-                    continue
-                else:
-                    result.append(alphabet[int(index)])
-                    conf.append(prob[i])
+            try:
+
+                for i, index in enumerate(word):
+                    if i < len(word) - 1 and word[i] == word[i + 1]:  # Hack to decode label as well
+                        continue
+                    if index == 0:
+                        continue
+                    else:
+                        result.append(alphabet[int(index)])
+                        conf.append(prob[i])
+            except:
+                a = 1
             result_list.append((''.join(result), conf))
     return result_list
 
 
-class GluonNet:
+class PytorchNet:
     def __init__(self, model_path, gpu_id=None):
         """
         初始化gluon模型
         :param model_path: 模型地址
         :param gpu_id: 在哪一块gpu上运行
         """
-        config = pickle.load(open(model_path.replace('.params', '.info'), 'rb'))['config']
+        checkpoint = torch.load(model_path)
+        config = checkpoint['config']
         alphabet = config['dataset']['alphabet']
-        self.ctx = try_gpu(gpu_id)
+
+        if self.gpu_id is not None and isinstance(self.gpu_id, int) and torch.cuda.is_available():
+            self.device = torch.device("cuda:%s" % self.gpu_id)
+        else:
+            self.device = torch.device("cpu")
+        print('device:', self.device)
 
         self.transform = []
         for t in config['dataset']['train']['dataset']['args']['transforms']:
@@ -76,9 +74,9 @@ class GluonNet:
         self.img_h = img_h
         self.img_mode = config['dataset']['train']['dataset']['args']['img_mode']
         self.alphabet = alphabet
-        self.net = get_model(len(alphabet), self.ctx, config['arch']['args'])
-        self.net.load_parameters(model_path, self.ctx)
-        self.net.hybridize()
+        img_channel = 3 if config['dataset']['train']['dataset']['args']['img_mode'] != 'GRAY' else 1
+        self.net = get_model(img_channel, len(self.alphabet) + 1, config['arch']['args'])
+        self.net.load_state_dict(checkpoint['state_dict'])
 
     def predict(self, img_path):
         """
@@ -91,7 +89,7 @@ class GluonNet:
         tensor = self.transform(img)
         tensor = tensor.expand_dims(axis=0)
 
-        tensor = tensor.as_in_context(self.ctx)
+        tensor = tensor.to(self.device)
         preds, nd_img = self.net(tensor)
 
         preds = preds.softmax().asnumpy()
@@ -110,22 +108,21 @@ class GluonNet:
         img = cv2.imread(img_path, 1 if self.img_mode != 'GRAY' else 0)
         if self.img_mode == 'RGB':
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = nd.array(img, dtype=img.dtype)
         h, w = img.shape[:2]
         ratio_h = float(self.img_h) / h
         new_w = int(w * ratio_h)
-        img = image.imresize(img, w=new_w, h=self.img_h)
-        # if new_w < self.img_w:
-        #     step = nd.zeros((self.img_h, self.img_w - new_w, self.img_channel), dtype=img.dtype)
-        #     img = nd.concat(img, step, dim=1)
+
+        if new_w < self.img_w:
+            img = cv2.resize(img, (new_w, self.img_h))
+            step = np.zeros((self.img_h, self.img_w - new_w, img.shape[-1]), dtype=img.dtype)
+            img = np.column_stack((img, step))
+        else:
+            img = cv2.resize(img, (self.img_w, self.img_h))
         return img
 
 
 if __name__ == '__main__':
-    os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
-
     from models import get_model
-    import pickle
     import time
     from matplotlib import pyplot as plt
     from matplotlib.font_manager import FontProperties
@@ -135,13 +132,12 @@ if __name__ == '__main__':
     img_path = '/media/zj/资料/zj/dataset/icdar_rec/ch4_test_word_images_gt/word_1.png'
     model_path = 'output/crnn_None_VGG_RNN_CTC/checkpoint/model_best.params'
 
-    gluon_net = GluonNet(model_path=model_path, gpu_id=None)
+    crnn_net = PytorchNet(model_path=model_path, gpu_id=None)
     start = time.time()
-    result, img = gluon_net.predict(img_path)
+    result, img = crnn_net.predict(img_path)
     print(time.time() - start)
 
     # 输出用于部署的模型
-    # gluon_net.net.export('./output/txt4')
 
     label = result[0][0]
     plt.title(label, fontproperties=font)

@@ -5,13 +5,13 @@ import os
 import argparse
 import anyconfig
 import numpy as np
-from mxnet import nd
-from mxnet.gluon.loss import CTCLoss
+import torch
+from torch.nn import CTCLoss
 
 from models import get_model
 from data_loader import get_dataloader
 from trainer import Trainer
-from utils import get_ctx
+from utils import CTCLabelConverter
 
 
 def main(config):
@@ -19,18 +19,17 @@ def main(config):
         config['dataset']['alphabet'] = str(np.load(config['dataset']['alphabet']))
 
     prediction_type = config['arch']['args']['prediction']['type']
-    num_class = len(config['dataset']['alphabet'])
 
     # loss 设置
     if prediction_type == 'CTC':
-        criterion = CTCLoss()
+        criterion = CTCLoss(blank=0, zero_infinity=True)
+        converter = CTCLabelConverter(config['dataset']['alphabet'])
+        config['dataset']['alphabet'] = converter.character
     else:
         raise NotImplementedError
 
-    ctx = get_ctx(config['trainer']['gpus'])
-    model = get_model(num_class, ctx, config['arch']['args'])
-    model.hybridize()
-    model.initialize(ctx=ctx)
+    img_channel = 3 if config['dataset']['train']['dataset']['args']['img_mode'] != 'GRAY' else 1
+    model = get_model(img_channel, len(config['dataset']['alphabet']), config['arch']['args'])
 
     img_h, img_w = 32, 100
     for process in config['dataset']['train']['dataset']['args']['pre_processes']:
@@ -38,32 +37,23 @@ def main(config):
             img_h = process['args']['img_h']
             img_w = process['args']['img_w']
             break
-    img_channel = 3 if config['dataset']['train']['dataset']['args']['img_mode'] != 'GRAY' else 1
-    sample_input = nd.zeros((2, img_channel, img_h, img_w), ctx[0])
+    sample_input = torch.zeros((2, img_channel, img_h, img_w))
     num_label = model.get_batch_max_length(sample_input)
-
-    train_loader = get_dataloader(config['dataset']['train'], num_label, config['dataset']['alphabet'])
+    train_loader = get_dataloader(config['dataset']['train'], num_label)
     assert train_loader is not None
     if 'validate' in config['dataset']:
-        validate_loader = get_dataloader(config['dataset']['validate'], num_label, config['dataset']['alphabet'])
+        validate_loader = get_dataloader(config['dataset']['validate'], num_label)
     else:
         validate_loader = None
 
-    config['lr_scheduler']['args']['step'] *= len(train_loader)
-
-    trainer = Trainer(config=config,
-                      model=model,
-                      criterion=criterion,
-                      train_loader=train_loader,
-                      validate_loader=validate_loader,
-                      sample_input = sample_input,
-                      ctx=ctx)
+    trainer = Trainer(config=config, model=model, criterion=criterion, train_loader=train_loader, validate_loader=validate_loader, sample_input=sample_input,
+                      converter=converter)
     trainer.train()
 
 
 def init_args():
-    parser = argparse.ArgumentParser(description='DBNet.pytorch')
-    parser.add_argument('--config_file', default='config/icdar2015.yaml', type=str)
+    parser = argparse.ArgumentParser(description='crnn.pytorch')
+    parser.add_argument('--config_file', default='config/icdar2015_win.yaml', type=str)
     args = parser.parse_args()
     return args
 
@@ -71,7 +61,7 @@ def init_args():
 if __name__ == '__main__':
     import sys
 
-    project = 'crnn.gluon'  # 工作项目根目录
+    project = 'crnn.pytorch'  # 工作项目根目录
     sys.path.append(os.getcwd().split(project)[0] + project)
 
     from utils import parse_config

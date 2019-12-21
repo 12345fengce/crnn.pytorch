@@ -9,7 +9,7 @@ dataset:
         data_ratio:
           - 1.0
         pre_processes: # 数据的预处理过程，包含augment和预处理
-          - type: IaaAugment # 使用imgaug进行变换
+#          - type: IaaAugment # 使用imgaug进行变换
           - type: Resize
             args:
               img_h: 32

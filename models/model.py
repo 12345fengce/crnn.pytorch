@@ -1,5 +1,5 @@
-from mxnet import nd
-from mxnet.gluon import HybridBlock
+import torch
+from torch import nn
 from models.modules import *
 
 
@@ -25,21 +25,25 @@ def init_modules(config, module_name, canbe_none=True, **kwargs):
     return module, module_type
 
 
-class Model(HybridBlock):
-    def __init__(self, n_class, ctx, config):
+class Model(nn.Module):
+    def __init__(self, in_channels, n_class, config):
         super(Model, self).__init__()
 
         # 二值分割网络
-        self.binarization, self.binarization_type = init_modules(config, 'binarization', canbe_none=True, ctx=ctx)
+        self.binarization, self.binarization_type = init_modules(config, 'binarization', canbe_none=True, in_channels=in_channels)
 
         # 特征提取模型设置
-        self.feature_extraction, self.feature_extraction_type = init_modules(config, 'feature_extraction', canbe_none=False)
-
+        if self.binarization is not None:
+            in_channels = self.binarization.out_channels
+        self.feature_extraction, self.feature_extraction_type = init_modules(config, 'feature_extraction', canbe_none=False, in_channels=in_channels)
+        in_channels = self.feature_extraction.out_channels
         # 序列模型
-        self.sequence_model, self.sequence_model_type = init_modules(config, 'sequence_model', canbe_none=True)
+        self.sequence_model, self.sequence_model_type = init_modules(config, 'sequence_model', canbe_none=True, in_channels=in_channels)
 
         # 预测设置
-        self.prediction, self.prediction_type = init_modules(config, 'prediction', canbe_none=False, n_class=n_class)
+        if self.sequence_model is not None:
+            in_channels = self.sequence_model.out_channels
+        self.prediction, self.prediction_type = init_modules(config, 'prediction', canbe_none=False, in_channels=in_channels, n_class=n_class)
 
         self.model_name = '{}_{}_{}_{}'.format(self.binarization_type, self.feature_extraction_type, self.sequence_model_type, self.prediction_type)
         self.batch_max_length = -1
@@ -52,7 +56,7 @@ class Model(HybridBlock):
         self.batch_max_length = visual_feature.shape[-1]
         return self.batch_max_length
 
-    def hybrid_forward(self, F, x, *args, **kwargs):
+    def forward(self, x):
         if self.binarization is not None:
             x = self.binarization(x)
         # 特征提取阶段
@@ -61,7 +65,7 @@ class Model(HybridBlock):
         if self.sequence_model is not None:
             contextual_feature = self.sequence_model(visual_feature)
         else:
-            contextual_feature = visual_feature.squeeze(axis=2).transpose((0, 2, 1))
+            contextual_feature = visual_feature.squeeze(axis=2).permute((0, 2, 1))
         # 预测阶段
         if self.prediction_type == 'CTC':
             prediction = self.prediction(contextual_feature)
@@ -72,21 +76,18 @@ class Model(HybridBlock):
 
 if __name__ == '__main__':
     import os
-    import mxnet as mx
+    import anyconfig
     import numpy as np
-    from utils import read_json
+    from utils import parse_config
 
-    config = read_json(r'E:\zj\code\crnn.gluon\config.json')
-
-    config['data_loader']['args']['alphabet'] = str(np.load(r'E:\zj\code\crnn.gluon\alphabet.npy'))
-    alphabet = config['data_loader']['args']['alphabet']
-    # checkpoint = torch.load(config['trainer']['resume']['checkpoint'])
-    ctx = mx.cpu()
-    net = Model(len(alphabet), config['arch']['args'])
-    # net.hybridize()
-    net.initialize(ctx=ctx)
-    print(net.model_name)
-    print(net.get_batch_max_length(32, 320, ctx))
-    a = nd.zeros((2, 3, 32, 320), ctx=ctx)
-    b = net(a)
+    config = anyconfig.load(open("config/icdar2015_win.yaml", 'rb'))
+    if 'base' in config:
+        config = parse_config(config)
+    if os.path.isfile(config['dataset']['alphabet']):
+        config['dataset']['alphabet'] = str(np.load(config['dataset']['alphabet']))
+    net = Model(3, len(config['dataset']['alphabet']), config['arch']['args'])
+    print(net.model_name, len(config['dataset']['alphabet']))
+    a = torch.zeros(2, 3, 32, 320)
+    print(net.get_batch_max_length(a))
+    b, _ = net(a)
     print(b.shape)

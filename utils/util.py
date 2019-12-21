@@ -10,7 +10,7 @@ from pathlib import Path
 
 def setup_logger(log_file_path: str = None):
     import logging
-    logger = logging.getLogger('crnn.gluon')
+    logger = logging.getLogger('crnn.pytorch')
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s %(name)s %(levelname)s: %(message)s')
     ch = logging.StreamHandler()

@@ -8,15 +8,13 @@ import shutil
 import pathlib
 import numpy as np
 from pprint import pformat
-import mxnet as mx
-from mxnet import nd, gluon
 import traceback
-
-from utils import setup_logger, get_ctx
+import torch
+from utils import setup_logger
 
 
 class BaseTrainer:
-    def __init__(self, config, model, criterion, ctx, sample_input):
+    def __init__(self, config, model, criterion, sample_input):
         config['trainer']['output_dir'] = os.path.join(str(pathlib.Path(os.path.abspath(__name__)).parent),
                                                        config['trainer']['output_dir'])
         config['name'] = config['name'] + '_' + model.model_name
@@ -31,45 +29,59 @@ class BaseTrainer:
         # 保存本次实验的alphabet 到模型保存的地方
         np.save(os.path.join(self.save_dir, 'alphabet.npy'), self.alphabet)
         self.global_step = 0
-        self.start_epoch = 1
+        self.start_epoch = 0
         self.config = config
 
         self.model = model
         self.criterion = criterion
-        # logger and tensorboard
-        self.tensorboard_enable = self.config['trainer']['tensorboard']
+        # logger
+        self.use_tensorboard = self.config['trainer']['tensorboard']
         self.epochs = self.config['trainer']['epochs']
         self.display_interval = self.config['trainer']['display_interval']
-        if self.tensorboard_enable:
-            from mxboard import SummaryWriter
-            self.writer = SummaryWriter(self.save_dir, verbose=False)
 
         self.logger = setup_logger(os.path.join(self.save_dir, 'train_log'))
         self.logger.info(pformat(self.config))
         self.logger.info(self.model)
-        # device set
-        self.ctx = ctx
-        mx.random.seed(2)  # 设置随机种子
 
-        self.logger.info('train with mxnet: {} and device: {}'.format(mx.__version__, self.ctx))
+        # device set
+        torch.manual_seed(self.config['trainer']['seed'])  # 为CPU设置随机种子
+        if len(self.config['trainer']['gpus']) > 0 and torch.cuda.is_available():
+            self.with_cuda = True
+            torch.backends.cudnn.benchmark = True
+            self.logger.info('train with pytorch {} gpu {}'.format(torch.__version__, self.config['trainer']['gpus']))
+            self.gpus = {i: item for i, item in enumerate(self.config['trainer']['gpus'])}
+            self.device = torch.device("cuda:0")
+        else:
+            self.with_cuda = False
+            self.logger.info('train with pytorch {} and cpu'.format(torch.__version__))
+            self.device = torch.device("cpu")
+
         self.metrics = {'val_acc': 0, 'train_loss': float('inf'), 'best_model': ''}
 
-        schedule = self._initialize('lr_scheduler', mx.lr_scheduler)
-        optimizer = self._initialize('optimizer', mx.optimizer, lr_scheduler=schedule)
-        self.trainer = gluon.Trainer(self.model.collect_params(), optimizer=optimizer)
+        self.optimizer = self._initialize('optimizer', torch.optim, model.parameters())
 
+        # resume or finetune
         if self.config['trainer']['resume_checkpoint'] != '':
             self._laod_checkpoint(self.config['trainer']['resume_checkpoint'], resume=True)
         elif self.config['trainer']['finetune_checkpoint'] != '':
             self._laod_checkpoint(self.config['trainer']['finetune_checkpoint'], resume=False)
+        self.scheduler = self._initialize('lr_scheduler', torch.optim.lr_scheduler, self.optimizer)
 
-        if self.tensorboard_enable:
+        self.model.to(self.device)
+        self.batch_max_length = self.model.batch_max_length
+        if torch.cuda.device_count() > 1:
+            self.model = torch.nn.DataParallel(model)
+
+        if self.use_tensorboard:
+            os.environ["TF_CPP_MIN_LOG_LEVEL"] = '3'  # 只显示 Error
+            from torch.utils.tensorboard import SummaryWriter
+            self.writer = SummaryWriter(self.save_dir)
             try:
                 # add graph
-                from mxnet.gluon import utils as gutils
-                self.model(sample_input)
-                self.writer.add_graph(model)
+                self.writer.add_graph(self.model, sample_input.to(self.device))
+                torch.cuda.empty_cache()
             except:
+                import traceback
                 self.logger.error(traceback.format_exc())
                 self.logger.warn('add graph to tensorboard failed')
 
@@ -78,12 +90,13 @@ class BaseTrainer:
         Full training logic
         """
         try:
-            for epoch in range(self.start_epoch, self.epochs + 1):
+            for epoch in range(self.start_epoch + 1, self.epochs + 1):
                 self.epoch_result = self._train_epoch(epoch)
+                self.scheduler.step()
                 self._on_epoch_finish()
         except:
             self.logger.error(traceback.format_exc())
-        if self.tensorboard_enable:
+        if self.use_tensorboard:
             self.writer.close()
         self._on_train_finish()
 
@@ -111,58 +124,50 @@ class BaseTrainer:
 
     def _save_checkpoint(self, epoch, file_name, save_best=False):
         """
-        保存模型和检查点信息，会保存模型权重，trainer状态，其他的信息
-        :param epoch: 当前epoch
-        :param file_name: 文件名
-        :param save_best: 是否是最优模型
-        :return:
+        Saving checkpoints
+        :param epoch: current epoch number
+        :param log: logging information of the epoch
+        :param save_best: if True, rename the saved checkpoint to 'model_best.pth.tar'
         """
-
-        # 保存权重
-        params_filename = os.path.join(self.checkpoint_dir, file_name)
-        self.model.save_parameters(params_filename)
-        # 保存trainer状态
-        trainer_filename = params_filename.replace('.params', '.train_states')
-        self.trainer.save_states(trainer_filename)
-        # 其他信息
+        state_dict = self.model.module.state_dict() if torch.cuda.device_count() > 1 else self.model.state_dict()
         state = {
             'epoch': epoch,
             'global_step': self.global_step,
+            'state_dict': state_dict,
+            'optimizer': self.optimizer.state_dict(),
+            'scheduler': self.scheduler.state_dict(),
             'config': self.config,
             'metrics': self.metrics
         }
-        other_filename = params_filename.replace('.params', '.info')
-        pickle.dump(state, open(other_filename, 'wb'))
+        filename = os.path.join(self.checkpoint_dir, file_name)
+        torch.save(state, filename)
         if save_best:
-            shutil.copy(params_filename, os.path.join(self.checkpoint_dir, 'model_best.params'))
-            shutil.copy(trainer_filename, os.path.join(self.checkpoint_dir, 'model_best.train_states'))
-            shutil.copy(other_filename, os.path.join(self.checkpoint_dir, 'model_best.info'))
-            self.logger.info("Saving current best: {}".format(os.path.join(self.checkpoint_dir, 'model_best.params')))
+            shutil.copy(filename, os.path.join(self.checkpoint_dir, 'model_best.pth'))
+            self.logger.info("Saving current best: {}".format(file_name))
         else:
-            self.logger.info("Saving checkpoint: {}".format(params_filename))
+            self.logger.info("Saving checkpoint: {}".format(filename))
 
     def _laod_checkpoint(self, checkpoint_path, resume):
         """
-        从检查点钟加载模型，会加载模型权重，trainer状态，其他的信息
-        :param resume_path: 检查点地址
-        :return:
+        Resume from saved checkpoints
+        :param checkpoint_path: Checkpoint path to be resumed
         """
         self.logger.info("Loading checkpoint: {} ...".format(checkpoint_path))
-
-        # 加载模型参数
-        self.model.load_parameters(checkpoint_path, ctx=self.ctx, ignore_extra=True, allow_missing=True)
+        checkpoint = torch.load(checkpoint_path, map_location=torch.device('cpu'))
+        self.model.load_state_dict(checkpoint['state_dict'], strict=resume)
         if resume:
-            # 加载trainer状态
-            trainer_filename = checkpoint_path.replace('.params', '.train_states')
-            if os.path.exists(trainer_filename):
-                self.trainer.load_states(trainer_filename)
-
-            # 加载其他信息
-            other_filename = checkpoint_path.replace('.params', '.info')
-            checkpoint = pickle.load(open(other_filename, 'rb'))
-            self.start_epoch = checkpoint['epoch'] + 1
             self.global_step = checkpoint['global_step']
-            self.metrics = checkpoint['metrics']
+            self.start_epoch = checkpoint['epoch']
+            self.config['lr_scheduler']['args']['last_epoch'] = self.start_epoch
+            # self.scheduler.load_state_dict(checkpoint['scheduler'])
+            self.optimizer.load_state_dict(checkpoint['optimizer'])
+            if 'metrics' in checkpoint:
+                self.metrics = checkpoint['metrics']
+            if self.with_cuda:
+                for state in self.optimizer.state.values():
+                    for k, v in state.items():
+                        if isinstance(v, torch.Tensor):
+                            state[k] = v.to(self.device)
             self.logger.info("resume from checkpoint {} (epoch {})".format(checkpoint_path, self.start_epoch))
         else:
             self.logger.info("finetune from checkpoint {}".format(checkpoint_path))
