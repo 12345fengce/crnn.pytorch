@@ -2,19 +2,18 @@
 # @Time    : 2018/8/23 22:20
 # @Author  : zhoujun
 import os
-import argparse
-import anyconfig
-import numpy as np
-import torch
-from torch.nn import CTCLoss
-
-from models import get_model
-from data_loader import get_dataloader
-from trainer import Trainer
-from utils import CTCLabelConverter
 
 
 def main(config):
+    import numpy as np
+    import torch
+    from torch.nn import CTCLoss
+
+    from models import get_model
+    from data_loader import get_dataloader
+    from trainer import Trainer
+    from utils import CTCLabelConverter
+
     if os.path.isfile(config['dataset']['alphabet']):
         config['dataset']['alphabet'] = str(np.load(config['dataset']['alphabet']))
 
@@ -52,6 +51,7 @@ def main(config):
 
 
 def init_args():
+    import argparse
     parser = argparse.ArgumentParser(description='crnn.pytorch')
     parser.add_argument('--config_file', default='config/icdar2015_win.yaml', type=str)
     args = parser.parse_args()
@@ -60,6 +60,7 @@ def init_args():
 
 if __name__ == '__main__':
     import sys
+    import anyconfig
 
     project = 'crnn.pytorch'  # 工作项目根目录
     sys.path.append(os.getcwd().split(project)[0] + project)
@@ -71,4 +72,5 @@ if __name__ == '__main__':
     config = anyconfig.load(open(args.config_file, 'rb'))
     if 'base' in config:
         config = parse_config(config)
+    os.environ['CUDA_VISIBLE_DEVICES'] = ','.join([str(gpu) for gpu in config['trainer']['gpus']])
     main(config)

@@ -48,11 +48,11 @@ class PytorchNet:
         :param gpu_id: 在哪一块gpu上运行
         """
         checkpoint = torch.load(model_path)
+        print('load {} epoch params'.format(checkpoint['epoch']))
         config = checkpoint['config']
         alphabet = config['dataset']['alphabet']
-
-        if self.gpu_id is not None and isinstance(self.gpu_id, int) and torch.cuda.is_available():
-            self.device = torch.device("cuda:%s" % self.gpu_id)
+        if gpu_id is not None and isinstance(self.gpu_id, int) and torch.cuda.is_available():
+            self.device = torch.device("cuda:%s" % gpu_id)
         else:
             self.device = torch.device("cpu")
         print('device:', self.device)
@@ -75,7 +75,7 @@ class PytorchNet:
         self.img_mode = config['dataset']['train']['dataset']['args']['img_mode']
         self.alphabet = alphabet
         img_channel = 3 if config['dataset']['train']['dataset']['args']['img_mode'] != 'GRAY' else 1
-        self.net = get_model(img_channel, len(self.alphabet) + 1, config['arch']['args'])
+        self.net = get_model(img_channel, len(self.alphabet), config['arch']['args'])
         self.net.load_state_dict(checkpoint['state_dict'])
 
     def predict(self, img_path):
@@ -87,17 +87,17 @@ class PytorchNet:
         assert os.path.exists(img_path), 'file is not exists'
         img = self.pre_processing(img_path)
         tensor = self.transform(img)
-        tensor = tensor.expand_dims(axis=0)
+        tensor = tensor.unsqueeze(dim=0)
 
         tensor = tensor.to(self.device)
-        preds, nd_img = self.net(tensor)
+        preds, tensor_img = self.net(tensor)
 
-        preds = preds.softmax().asnumpy()
+        preds = preds.softmax(dim=2).detach().cpu().numpy()
         # result = decode(preds, self.alphabet, raw=True)
         # print(result)
         result = decode(preds, self.alphabet)
         print(result)
-        return result, img
+        return result, tensor_img
 
     def pre_processing(self, img_path):
         """
@@ -141,5 +141,5 @@ if __name__ == '__main__':
 
     label = result[0][0]
     plt.title(label, fontproperties=font)
-    plt.imshow(img.asnumpy().squeeze(), cmap='gray')
+    plt.imshow(img.detach().cpu().numpy().squeeze(), cmap='gray')
     plt.show()
