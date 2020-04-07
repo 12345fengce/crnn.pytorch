@@ -6,11 +6,11 @@ arch:
     binarization:
       type: None
     feature_extraction:
-      type: VGG
+      type: CNN_lite
     sequence_model:
       type: RNN
       args:
-        hidden_size: 512
+        hidden_size: 256
         num_layers: 1
     prediction:
       type: CTC

@@ -16,21 +16,22 @@ class BidirectionalGRU(nn.Module):
 
 
 class BidirectionalLSTM(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers):
+    def __init__(self, input_size, hidden_size):
         super(BidirectionalLSTM, self).__init__()
-        self.rnn = nn.LSTM(input_size, hidden_size, num_layers, bidirectional=True, batch_first=True)
+        self.rnn = nn.LSTM(input_size, hidden_size, bidirectional=True, batch_first=True)
+        self.fc = nn.Linear(hidden_size * 2, hidden_size)
 
     def forward(self, x):
         x, _ = self.rnn(x)
+        x = self.fc(x)
         return x
 
-
 class RNNDecoder(nn.Module):
-    def __init__(self, in_channels, hidden_size=256, num_layers=1):
+    def __init__(self, in_channels, hidden_size=256):
         super(RNNDecoder, self).__init__()
         self.lstm = nn.Sequential(
-            BidirectionalLSTM(in_channels, hidden_size, num_layers),
-            BidirectionalLSTM(hidden_size * 2, hidden_size, num_layers)
+            BidirectionalLSTM(in_channels, hidden_size // 2),
+            BidirectionalLSTM(hidden_size, hidden_size // 4)
         )
         self.out_channels = hidden_size * 2
 

@@ -98,13 +98,14 @@ if __name__ == '__main__':
         config['dataset']['alphabet'] = str(np.load(config['dataset']['alphabet']))
 
     device = torch.device('cuda:0')
-    net = Model(3, len(config['dataset']['alphabet']), config['arch']['args']).to(device)
+    net = Model(3, len(config['dataset']['alphabet'])+1, config['arch']['args']).to(device)
     print(net.model_name, len(config['dataset']['alphabet']))
     a = torch.randn(2, 3, 32, 320).to(device)
     print(net.get_batch_max_length(a))
 
     import time
 
+    torch.save(net.state_dict(), 'crnn_lite.pth')
     tic = time.time()
     for i in range(100):
         b = net(a)[0]
