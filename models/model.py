@@ -24,6 +24,7 @@ def init_modules(config, module_name, canbe_none=True, **kwargs):
         module = eval(module_type)(**module_args)
     return module, module_type
 
+
 def weights_init(m):
     if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
         nn.init.uniform_(m.weight, a=-0.07, b=0.07)
@@ -33,6 +34,7 @@ def weights_init(m):
         nn.init.constant_(m.weight, 1)
         if m.bias is not None:
             nn.init.constant_(m.bias, 0)
+
 
 class Model(nn.Module):
     def __init__(self, in_channels, n_class, config):
@@ -47,7 +49,7 @@ class Model(nn.Module):
         self.feature_extraction, self.feature_extraction_type = init_modules(config, 'feature_extraction', canbe_none=False, in_channels=in_channels)
         in_channels = self.feature_extraction.out_channels
         # 序列模型
-        self.sequence_model, self.sequence_model_type = init_modules(config, 'sequence_model', canbe_none=False, in_channels=in_channels)
+        self.sequence_model, self.sequence_model_type = init_modules(config, 'sequence_model', canbe_none=True, in_channels=in_channels)
 
         # 预测设置
         if self.sequence_model is not None:
@@ -57,7 +59,6 @@ class Model(nn.Module):
         self.model_name = '{}_{}_{}_{}'.format(self.binarization_type, self.feature_extraction_type, self.sequence_model_type, self.prediction_type)
         self.batch_max_length = -1
         self.apply(weights_init)
-
 
     def get_batch_max_length(self, x):
         # 特征提取阶段
