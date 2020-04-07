@@ -3,71 +3,59 @@ from models.modules.basic import ConvBnRelu
 from torchvision.models.densenet import _DenseBlock
 
 
+class DWConv(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, use_bn=False):
+        super().__init__()
+        self.use_bn = use_bn
+        self.DWConv = nn.Conv2d(in_channels, in_channels, kernel_size, stride, padding, groups=in_channels)
+        if use_bn:
+            self.DWBn = nn.BatchNorm2d(in_channels)
+        self.DwRelu = nn.ReLU(True)
+
+        self.conv1x1 = nn.Conv2d(in_channels, out_channels, 1, 1, 0)
+        if use_bn:
+            self.conv1x1_bn = nn.BatchNorm2d(out_channels)
+        self.conv1x1_relu = nn.ReLU(True)
+
+    def forward(self, x):
+        x = self.DWConv(x)
+        if self.use_bn:
+            x = self.DWBn(x)
+        x = self.DwRelu(x)
+        x = self.conv1x1(x)
+        if self.use_bn:
+            x = self.conv1x1_bn(x)
+        x = self.conv1x1_relu(x)
+        return x
+
+
 class CNN_lite(nn.Module):
     def __init__(self, in_channels):
-        """
-        是否加入lstm特征层
-        """
         super().__init__()
 
         ks = [5, 3, 3, 3, 3, 3, 2]
         ps = [2, 1, 1, 1, 1, 1, 0]
-        # ss = [1, 1, 1, 1, 1, 1, 1]
         ss = [2, 1, 1, 1, 1, 1, 1]
         nm = [24, 128, 256, 256, 512, 512, 512]
-        # nm = [32, 64, 128, 128, 256, 256, 256]
-        # exp_ratio = [2,2,2,2,1,1,2]
-        cnn = nn.Sequential()
         self.out_channels = nm[-1]
-
-        def convRelu(i, batchNormalization=False):
-            nIn = in_channels if i == 0 else nm[i - 1]
-            nOut = nm[i]
-            # exp  = exp_ratio[i]
-            # exp_num = exp * nIn
-            if i == 0:
-                cnn.add_module('conv_{0}'.format(i), nn.Conv2d(nIn, nOut, ks[i], ss[i], ps[i]))
-                cnn.add_module('relu_{0}'.format(i), nn.ReLU(True))
-            else:
-                # depth wise conv
-                cnn.add_module('conv{0}'.format(i), nn.Conv2d(nIn, nIn, ks[i], ss[i], ps[i], groups=nIn))
-                if batchNormalization:
-                    cnn.add_module('batchnorm{0}'.format(i), nn.BatchNorm2d(nIn))
-                cnn.add_module('relu{0}'.format(i), nn.ReLU(True))
-
-                cnn.add_module('convproject{0}'.format(i), nn.Conv2d(nIn, nOut, 1, 1, 0))
-                if batchNormalization:
-                    cnn.add_module('batchnormproject{0}'.format(i), nn.BatchNorm2d(nOut))
-                cnn.add_module('relu{0}'.format(i), nn.ReLU(True))
-
-        convRelu(0)
-        # cnn.add_module('pooling{0}'.format(0), nn.MaxPool2d(2, 2))  # 64x16x64
-        convRelu(1)
-        cnn.add_module('pooling{0}'.format(1), nn.MaxPool2d(2, 2))  # 128x8x32
-        convRelu(2, True)
-        convRelu(3)
-
-        cnn.add_module('pooling{0}'.format(2), nn.MaxPool2d((2, 2), (2, 1), (0, 1)))  # 256x4x16
-
-        # cnn.add_module('pooling{0}'.format(2),
-        #                nn.MaxPool2d((2, 2))) # 256x4x16
-
-        convRelu(4, True)
-        convRelu(5)
-        cnn.add_module('pooling{0}'.format(3), nn.MaxPool2d((2, 2), (2, 1), (0, 1)))  # 512x2x16
-
-        # cnn.add_module('pooling{0}'.format(3),
-        #                nn.MaxPool2d((2, 2))) # 256x4x16
-
-        convRelu(6, True)  # 512x1x16
-
-        self.cnn = cnn
+        self.cnn = nn.Sequential(
+            nn.Conv2d(in_channels, 24, kernel_size=5, stride=2, padding=2),
+            nn.ReLU(True),
+            DWConv(24, 128, kernel_size=3, stride=1, padding=1),
+            nn.MaxPool2d(2, 2),
+            DWConv(128, 256, kernel_size=3, stride=1, padding=1,use_bn=True),
+            DWConv(256, 256, kernel_size=3, stride=1, padding=1),
+            nn.MaxPool2d((2, 2), (2, 1), (0, 1)),
+            DWConv(256, 512, kernel_size=3, stride=1, padding=1, use_bn=True),
+            DWConv(512, 512, kernel_size=3, stride=1, padding=1),
+            nn.MaxPool2d((2, 2), (2, 1), (0, 1)),
+            DWConv(512, 512, kernel_size=2, stride=1, padding=0, use_bn=True),
+        )
 
     def forward(self, input):
         # conv features
         conv = self.cnn(input)
         return conv
-
 
 class VGG(nn.Module):
     def __init__(self, in_channels, **kwargs):
