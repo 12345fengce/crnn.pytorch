@@ -47,7 +47,7 @@ class Model(nn.Module):
         self.feature_extraction, self.feature_extraction_type = init_modules(config, 'feature_extraction', canbe_none=False, in_channels=in_channels)
         in_channels = self.feature_extraction.out_channels
         # 序列模型
-        self.sequence_model, self.sequence_model_type = init_modules(config, 'sequence_model', canbe_none=True, in_channels=in_channels)
+        self.sequence_model, self.sequence_model_type = init_modules(config, 'sequence_model', canbe_none=False, in_channels=in_channels)
 
         # 预测设置
         if self.sequence_model is not None:
@@ -98,16 +98,16 @@ if __name__ == '__main__':
         config['dataset']['alphabet'] = str(np.load(config['dataset']['alphabet']))
 
     device = torch.device('cuda:0')
-    net = Model(3, len(config['dataset']['alphabet'])+1, config['arch']['args']).to(device)
+    net = Model(3, 20000, config['arch']['args']).to(device)
     print(net.model_name, len(config['dataset']['alphabet']))
     a = torch.randn(2, 3, 32, 320).to(device)
     print(net.get_batch_max_length(a))
 
     import time
 
-    torch.save(net.state_dict(), 'crnn_lite.pth')
+    torch.save(net.state_dict(), 'crnn_lite1.pth')
     tic = time.time()
-    for i in range(100):
+    for i in range(10):
         b = net(a)[0]
     print(b.shape)
-    print((time.time() - tic) / 100)
+    print((time.time() - tic) / 10)

@@ -2,8 +2,8 @@ from torch import nn
 from models.modules.basic import ConvBnRelu
 from torchvision.models.densenet import _DenseBlock
 
-class CNN_lite(nn.Module):
 
+class CNN_lite(nn.Module):
     def __init__(self, in_channels):
         """
         是否加入lstm特征层
@@ -19,31 +19,26 @@ class CNN_lite(nn.Module):
         # exp_ratio = [2,2,2,2,1,1,2]
         cnn = nn.Sequential()
         self.out_channels = nm[-1]
+
         def convRelu(i, batchNormalization=False):
             nIn = in_channels if i == 0 else nm[i - 1]
             nOut = nm[i]
             # exp  = exp_ratio[i]
             # exp_num = exp * nIn
             if i == 0:
-                cnn.add_module('conv_{0}'.format(i),
-                               nn.Conv2d(nIn , nOut , ks[i], ss[i], ps[i]))
+                cnn.add_module('conv_{0}'.format(i), nn.Conv2d(nIn, nOut, ks[i], ss[i], ps[i]))
                 cnn.add_module('relu_{0}'.format(i), nn.ReLU(True))
             else:
-
-                cnn.add_module('conv{0}'.format(i),
-                               nn.Conv2d( nIn,  nIn, ks[i], ss[i], ps[i],groups=nIn))
+                # depth wise conv
+                cnn.add_module('conv{0}'.format(i), nn.Conv2d(nIn, nIn, ks[i], ss[i], ps[i], groups=nIn))
                 if batchNormalization:
                     cnn.add_module('batchnorm{0}'.format(i), nn.BatchNorm2d(nIn))
                 cnn.add_module('relu{0}'.format(i), nn.ReLU(True))
 
-                cnn.add_module('convproject{0}'.format(i),
-                               nn.Conv2d(nIn, nOut, 1, 1, 0))
+                cnn.add_module('convproject{0}'.format(i), nn.Conv2d(nIn, nOut, 1, 1, 0))
                 if batchNormalization:
                     cnn.add_module('batchnormproject{0}'.format(i), nn.BatchNorm2d(nOut))
                 cnn.add_module('relu{0}'.format(i), nn.ReLU(True))
-
-
-
 
         convRelu(0)
         # cnn.add_module('pooling{0}'.format(0), nn.MaxPool2d(2, 2))  # 64x16x64
@@ -52,16 +47,14 @@ class CNN_lite(nn.Module):
         convRelu(2, True)
         convRelu(3)
 
-        cnn.add_module('pooling{0}'.format(2),
-                       nn.MaxPool2d((2, 2), (2, 1), (0, 1)))  # 256x4x16
+        cnn.add_module('pooling{0}'.format(2), nn.MaxPool2d((2, 2), (2, 1), (0, 1)))  # 256x4x16
 
         # cnn.add_module('pooling{0}'.format(2),
         #                nn.MaxPool2d((2, 2))) # 256x4x16
 
         convRelu(4, True)
         convRelu(5)
-        cnn.add_module('pooling{0}'.format(3),
-                       nn.MaxPool2d((2, 2), (2, 1), (0, 1)))  # 512x2x16
+        cnn.add_module('pooling{0}'.format(3), nn.MaxPool2d((2, 2), (2, 1), (0, 1)))  # 512x2x16
 
         # cnn.add_module('pooling{0}'.format(3),
         #                nn.MaxPool2d((2, 2))) # 256x4x16
@@ -74,6 +67,7 @@ class CNN_lite(nn.Module):
         # conv features
         conv = self.cnn(input)
         return conv
+
 
 class VGG(nn.Module):
     def __init__(self, in_channels, **kwargs):
