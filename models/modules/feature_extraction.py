@@ -32,12 +32,7 @@ class DWConv(nn.Module):
 class CNN_lite(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
-
-        ks = [5, 3, 3, 3, 3, 3, 2]
-        ps = [2, 1, 1, 1, 1, 1, 0]
-        ss = [2, 1, 1, 1, 1, 1, 1]
-        nm = [24, 128, 256, 256, 512, 512, 512]
-        self.out_channels = nm[-1]
+        self.out_channels = 512
         self.cnn = nn.Sequential(
             nn.Conv2d(in_channels, 24, kernel_size=5, stride=2, padding=2),
             nn.ReLU(True),
@@ -52,9 +47,8 @@ class CNN_lite(nn.Module):
             DWConv(512, 512, kernel_size=2, stride=1, padding=0, use_bn=True),
         )
 
-    def forward(self, input):
-        # conv features
-        conv = self.cnn(input)
+    def forward(self, x):
+        conv = self.cnn(x)
         return conv
 
 class VGG(nn.Module):
