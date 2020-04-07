@@ -91,14 +91,22 @@ if __name__ == '__main__':
     import numpy as np
     from utils import parse_config
 
-    config = anyconfig.load(open("config/icdar2015_win.yaml", 'rb'))
+    config = anyconfig.load(open("config/icdar2015.yaml", 'rb'))
     if 'base' in config:
         config = parse_config(config)
     if os.path.isfile(config['dataset']['alphabet']):
         config['dataset']['alphabet'] = str(np.load(config['dataset']['alphabet']))
-    net = Model(3, len(config['dataset']['alphabet']), config['arch']['args'])
+
+    device = torch.device('cuda:0')
+    net = Model(3, len(config['dataset']['alphabet']), config['arch']['args']).to(device)
     print(net.model_name, len(config['dataset']['alphabet']))
-    a = torch.zeros(2, 3, 32, 320)
+    a = torch.randn(2, 3, 32, 320).to(device)
     print(net.get_batch_max_length(a))
-    b, _ = net(a)
+
+    import time
+
+    tic = time.time()
+    for i in range(100):
+        b = net(a)[0]
     print(b.shape)
+    print((time.time() - tic) / 100)

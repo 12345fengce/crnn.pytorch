@@ -4,7 +4,7 @@
 @author: zhoujun
 @time: 2019/12/17 下午1:51
 '''
-
+import torch
 from torch import nn
 import torch.nn.functional as F
 
@@ -55,6 +55,7 @@ class UpBlock(nn.Module):
 class UNet(nn.Module):
     def __init__(self, in_channels, **kwargs):
         super().__init__()
+        self.k = kwargs.get('k', 1)
         self.stage_channels = [32, 64, 128, 256, 512]
         self.d0 = DownBlock(in_channels, self.stage_channels[0])
 
@@ -71,10 +72,7 @@ class UNet(nn.Module):
         self.u1 = UpBlock(self.stage_channels[2], self.stage_channels[1], shrink=True)
         self.u0 = UpBlock(self.stage_channels[1], self.stage_channels[0], shrink=False)
 
-        self.conv = nn.Sequential(
-            nn.Conv2d(self.stage_channels[0], 1, 1, bias=False),
-            nn.Sigmoid()
-        )
+        self.conv = nn.Conv2d(self.stage_channels[0], 1, 1, bias=False)
         self.out_channels = 1
 
     def forward(self, x):
@@ -89,11 +87,11 @@ class UNet(nn.Module):
         y1 = self.u1(y2, x1)
         y0 = self.u0(y1, x0)
         out = self.conv(y0)
+        out = torch.sigmoid(out * self.k)
         return out
 
 
 if __name__ == '__main__':
-    import torch
 
     x = torch.zeros(1, 3, 32, 320)
     net = UNet(3)

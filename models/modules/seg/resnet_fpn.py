@@ -37,10 +37,7 @@ class FPN(nn.Module):
             nn.BatchNorm2d(self.conv_out_channels),
             nn.ReLU(inplace=inplace)
         )
-        self.out_conv = nn.Sequential(
-            nn.Conv2d(in_channels=self.conv_out_channels, out_channels=1, kernel_size=1),
-            nn.Sigmoid()
-        )
+        self.out_conv =  nn.Conv2d(in_channels=self.conv_out_channels, out_channels=1, kernel_size=1)
 
     def forward(self, x):
         c2, c3, c4, c5 = x
@@ -76,7 +73,7 @@ class ResNetFPN(nn.Module):
         :param model_config: 模型配置
         """
         super().__init__()
-
+        self.k = kwargs.get('k', 1)
         backbone_dict = {
             'resnet18': {'models': resnet18, 'out': [64, 128, 256, 512]},
             'deformable_resnet18': {'models': deformable_resnet18, 'out': [64, 128, 256, 512]},
@@ -96,5 +93,6 @@ class ResNetFPN(nn.Module):
         _, _, H, W = x.size()
         backbone_out = self.backbone(x)
         y = self.segmentation_head(backbone_out)
+        y = torch.sigmoid(y * self.k)
         y = F.interpolate(y, size=(H, W))
         return y
