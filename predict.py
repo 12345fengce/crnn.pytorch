@@ -51,7 +51,7 @@ class PytorchNet:
         print('load {} epoch params'.format(checkpoint['epoch']))
         config = checkpoint['config']
         alphabet = config['dataset']['alphabet']
-        if gpu_id is not None and isinstance(self.gpu_id, int) and torch.cuda.is_available():
+        if gpu_id is not None and isinstance(gpu_id, int) and torch.cuda.is_available():
             self.device = torch.device("cuda:%s" % gpu_id)
         else:
             self.device = torch.device("cpu")
@@ -77,8 +77,10 @@ class PytorchNet:
         img_channel = 3 if config['dataset']['train']['dataset']['args']['img_mode'] != 'GRAY' else 1
         self.net = get_model(img_channel, len(self.alphabet), config['arch']['args'])
         self.net.load_state_dict(checkpoint['state_dict'])
+        # self.net = torch.jit.load('crnn_lite.pt')
+        self.net.to(self.device)
 
-    def predict(self, img_path):
+    def predict(self, img_path, model_save_path=None):
         """
         对传入的图像进行预测，支持图像地址和numpy数组
         :param img_path: 图像地址
@@ -97,6 +99,9 @@ class PytorchNet:
         # print(result)
         result = decode(preds, self.alphabet)
         print(result)
+        if model_save_path is not None:
+            # 输出用于部署的模型
+            save(self.net, tensor, 'crnn_lite.pt')
         return result, tensor_img
 
     def pre_processing(self, img_path):
@@ -121,6 +126,13 @@ class PytorchNet:
         return img
 
 
+def save(net, input, save_path):
+    # 在gpu导出的模型只能在gpu使用，cpu导出的只能在cpu使用
+    net.eval()
+    traced_script_module = torch.jit.trace(net, input)
+    traced_script_module.save(save_path)
+
+
 if __name__ == '__main__':
     from models import get_model
     import time
@@ -129,17 +141,15 @@ if __name__ == '__main__':
 
     font = FontProperties(fname=r"msyh.ttc", size=14)
 
-    img_path = '/media/zj/资料/zj/dataset/icdar_rec/ch4_test_word_images_gt/word_1.png'
-    model_path = 'output/crnn_None_VGG_RNN_CTC/checkpoint/model_best.params'
+    img_path = 'E:/zj/dataset/test_crnn/val/0_song5_0_3.jpg'
+    model_path = 'output/crnn_None_CNN_lite_RNN_CTC/checkpoint/model_best.pth'
 
-    crnn_net = PytorchNet(model_path=model_path, gpu_id=None)
+    crnn_net = PytorchNet(model_path=model_path, gpu_id=0)
     start = time.time()
     result, img = crnn_net.predict(img_path)
     print(time.time() - start)
 
-    # 输出用于部署的模型
-
     label = result[0][0]
     plt.title(label, fontproperties=font)
-    plt.imshow(img.detach().cpu().numpy().squeeze(), cmap='gray')
+    plt.imshow(img.detach().cpu().numpy().squeeze().transpose((1, 2, 0)), cmap='gray')
     plt.show()

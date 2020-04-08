@@ -5,6 +5,7 @@ venv/
 *.pyc
 .DS_Store
 *.pth
+*.pt
 *.pyc
 *.pyo
 *.log
