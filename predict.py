@@ -5,7 +5,6 @@ import os
 import cv2
 import numpy as np
 import torch
-from torchvision import transforms
 
 from data_loader import get_transforms
 
@@ -77,7 +76,7 @@ class PytorchNet:
         img_channel = 3 if config['dataset']['train']['dataset']['args']['img_mode'] != 'GRAY' else 1
         self.net = get_model(img_channel, len(self.alphabet), config['arch']['args'])
         self.net.load_state_dict(checkpoint['state_dict'])
-        # self.net = torch.jit.load('crnn_lite.pt')
+        # self.net = torch.jit.load('crnn_lite_gpu.pt')
         self.net.to(self.device)
 
     def predict(self, img_path, model_save_path=None):
@@ -101,7 +100,7 @@ class PytorchNet:
         print(result)
         if model_save_path is not None:
             # 输出用于部署的模型
-            save(self.net, tensor, 'crnn_lite.pt')
+            save(self.net, tensor, model_save_path)
         return result, tensor_img
 
     def pre_processing(self, img_path):
@@ -141,13 +140,14 @@ if __name__ == '__main__':
 
     font = FontProperties(fname=r"msyh.ttc", size=14)
 
-    img_path = 'E:/zj/dataset/test_crnn/val/0_song5_0_3.jpg'
+    img_path = '/media/zj/资料/zj/dataset/test_crnn/val/0_song5_0_3.jpg'
     model_path = 'output/crnn_None_CNN_lite_RNN_CTC/checkpoint/model_best.pth'
 
     crnn_net = PytorchNet(model_path=model_path, gpu_id=0)
     start = time.time()
-    result, img = crnn_net.predict(img_path)
-    print(time.time() - start)
+    for i in range(10):
+        result, img = crnn_net.predict(img_path)
+    print((time.time() - start) / 10)
 
     label = result[0][0]
     plt.title(label, fontproperties=font)
