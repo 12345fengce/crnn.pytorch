@@ -5,7 +5,6 @@ import os
 
 
 def main(config):
-    import numpy as np
     import torch
     from torch.nn import CTCLoss
 

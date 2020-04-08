@@ -89,7 +89,7 @@ class Trainer(BaseTrainer):
     def _on_epoch_finish(self):
         self.logger.info('[{}/{}], train_loss: {:.4f}, time: {:.4f}, lr: {}'.format(
             self.epoch_result['epoch'], self.epochs, self.epoch_result['train_loss'], self.epoch_result['time'], self.epoch_result['lr']))
-        net_save_path = '{}/model_latest.params'.format(self.checkpoint_dir)
+        net_save_path = '{}/model_latest.pth'.format(self.checkpoint_dir)
 
         save_best = False
         if self.validate_loader is not None:

@@ -6,7 +6,7 @@ arch:
     binarization:
       type: None
     feature_extraction:
-      type: CNN_lite
+      type: VGG
     sequence_model:
       type: RNN
       args:
