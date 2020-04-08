@@ -7,7 +7,7 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from models.modules.basic import ConvBnRelu
+from models.modules.basic import BasicConv
 
 from models.modules.seg.resnet import *
 
@@ -23,14 +23,14 @@ class FPN(nn.Module):
         self.conv_out_channels = inner_channels
         inner_channels = inner_channels // 4
         # reduce layers
-        self.reduce_conv_c2 = ConvBnRelu(backbone_out_channels[0], inner_channels, kernel_size=1, inplace=inplace)
-        self.reduce_conv_c3 = ConvBnRelu(backbone_out_channels[1], inner_channels, kernel_size=1, inplace=inplace)
-        self.reduce_conv_c4 = ConvBnRelu(backbone_out_channels[2], inner_channels, kernel_size=1, inplace=inplace)
-        self.reduce_conv_c5 = ConvBnRelu(backbone_out_channels[3], inner_channels, kernel_size=1, inplace=inplace)
+        self.reduce_conv_c2 = BasicConv(backbone_out_channels[0], inner_channels, kernel_size=1, inplace=inplace)
+        self.reduce_conv_c3 = BasicConv(backbone_out_channels[1], inner_channels, kernel_size=1, inplace=inplace)
+        self.reduce_conv_c4 = BasicConv(backbone_out_channels[2], inner_channels, kernel_size=1, inplace=inplace)
+        self.reduce_conv_c5 = BasicConv(backbone_out_channels[3], inner_channels, kernel_size=1, inplace=inplace)
         # Smooth layers
-        self.smooth_p4 = ConvBnRelu(inner_channels, inner_channels, kernel_size=3, padding=1, inplace=inplace)
-        self.smooth_p3 = ConvBnRelu(inner_channels, inner_channels, kernel_size=3, padding=1, inplace=inplace)
-        self.smooth_p2 = ConvBnRelu(inner_channels, inner_channels, kernel_size=3, padding=1, inplace=inplace)
+        self.smooth_p4 = BasicConv(inner_channels, inner_channels, kernel_size=3, padding=1, inplace=inplace)
+        self.smooth_p3 = BasicConv(inner_channels, inner_channels, kernel_size=3, padding=1, inplace=inplace)
+        self.smooth_p2 = BasicConv(inner_channels, inner_channels, kernel_size=3, padding=1, inplace=inplace)
 
         self.conv = nn.Sequential(
             nn.Conv2d(self.conv_out_channels, self.conv_out_channels, kernel_size=3, padding=1, stride=1),

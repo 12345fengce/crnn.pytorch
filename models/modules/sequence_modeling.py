@@ -1,6 +1,6 @@
 from torch import nn
 
-from models.modules.basic import ConvBnRelu
+from models.modules.basic import BasicConv
 
 
 class BidirectionalGRU(nn.Module):
@@ -51,10 +51,10 @@ class CNNDecoder(nn.Module):
     def __init__(self, in_channels, hidden_size=256):
         super().__init__()
         self.cnn_decoder = nn.Sequential(
-            ConvBnRelu(in_channels=in_channels, out_channels=hidden_size, kernel_size=3, padding=1, stride=(2, 1), bias=False),
-            ConvBnRelu(in_channels=hidden_size, out_channels=hidden_size, kernel_size=3, padding=1, stride=(2, 1), bias=False),
-            ConvBnRelu(in_channels=hidden_size, out_channels=hidden_size, kernel_size=3, padding=1, stride=(2, 1), bias=False),
-            ConvBnRelu(in_channels=hidden_size, out_channels=hidden_size, kernel_size=3, padding=1, stride=(2, 1), bias=False)
+            BasicConv(in_channels=in_channels, out_channels=hidden_size, kernel_size=3, padding=1, stride=(2, 1), bias=False),
+            BasicConv(in_channels=hidden_size, out_channels=hidden_size, kernel_size=3, padding=1, stride=(2, 1), bias=False),
+            BasicConv(in_channels=hidden_size, out_channels=hidden_size, kernel_size=3, padding=1, stride=(2, 1), bias=False),
+            BasicConv(in_channels=hidden_size, out_channels=hidden_size, kernel_size=3, padding=1, stride=(2, 1), bias=False)
         )
         self.out_channels = hidden_size
 

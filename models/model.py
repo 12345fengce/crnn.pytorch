@@ -89,24 +89,23 @@ class Model(nn.Module):
 if __name__ == '__main__':
     import os
     import anyconfig
-    import numpy as np
-    from utils import parse_config
+    from utils import parse_config,load
 
     config = anyconfig.load(open("config/icdar2015.yaml", 'rb'))
     if 'base' in config:
         config = parse_config(config)
     if os.path.isfile(config['dataset']['alphabet']):
-        config['dataset']['alphabet'] = str(np.load(config['dataset']['alphabet']))
+        config['dataset']['alphabet'] = load(config['dataset']['alphabet'])
 
     device = torch.device('cuda:0')
-    net = Model(3, 20000, config['arch']['args']).to(device)
+    net = Model(3, 3000, config['arch']['args']).to(device)
     print(net.model_name, len(config['dataset']['alphabet']))
     a = torch.randn(2, 3, 32, 320).to(device)
     print(net.get_batch_max_length(a))
 
     import time
 
-    torch.save(net.state_dict(), 'crnn_lite1.pth')
+    torch.save(net.state_dict(), 'crnn_lite.pth')
     tic = time.time()
     for i in range(10):
         b = net(a)[0]

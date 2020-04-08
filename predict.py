@@ -97,7 +97,6 @@ class PytorchNet:
         # result = decode(preds, self.alphabet, raw=True)
         # print(result)
         result = decode(preds, self.alphabet)
-        print(result)
         if model_save_path is not None:
             # 输出用于部署的模型
             save(self.net, tensor, model_save_path)
@@ -141,13 +140,13 @@ if __name__ == '__main__':
     font = FontProperties(fname=r"msyh.ttc", size=14)
 
     img_path = '/media/zj/资料/zj/dataset/test_crnn/val/0_song5_0_3.jpg'
-    model_path = 'output/crnn_None_CNN_lite_RNN_CTC/checkpoint/model_best.pth'
+    model_path = 'output/crnn_None_ResNet_RNN_CTC/checkpoint/model_best.pth'
 
     crnn_net = PytorchNet(model_path=model_path, gpu_id=0)
     start = time.time()
-    for i in range(10):
+    for i in range(100):
         result, img = crnn_net.predict(img_path)
-    print((time.time() - start) / 10)
+    print((time.time() - start) *1000/ 100)
 
     label = result[0][0]
     plt.title(label, fontproperties=font)

@@ -6,7 +6,9 @@ arch:
     binarization:
       type: None
     feature_extraction:
-      type: VGG
+      type: ResNet
+      args:
+        conv_type: DWBlock
     sequence_model:
       type: RNN
       args:
@@ -39,7 +41,7 @@ dataset:
       type: ImageDataset # 数据集类型
       args:
         data_path:
-          - - /media/zj/资料/zj/dataset/test_crnn/train_linux.txt
+          - - /media/zj/资料/zj/dataset/test_crnn1/train.txt
         data_ratio:
           - 1.0
         img_mode: RGB
@@ -53,7 +55,7 @@ dataset:
       type: ImageDataset
       args:
         data_path: # [文件，文件]，每个文件格式为 img_path \t gt
-          - /media/zj/资料/zj/dataset/test_crnn/val_linux.txt
+          - /media/zj/资料/zj/dataset/test_crnn1/val.txt
         img_mode: RGB
     loader:
       batch_size: 4
