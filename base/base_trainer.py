@@ -39,7 +39,7 @@ class BaseTrainer:
         self.epochs = self.config['trainer']['epochs']
         self.display_interval = self.config['trainer']['display_interval']
 
-        self.logger = setup_logger(os.path.join(self.save_dir, 'train_log'))
+        self.logger = setup_logger(os.path.join(self.save_dir, 'train.log'))
         self.logger.info(pformat(self.config))
         self.logger.info(self.model)
 
