@@ -43,7 +43,7 @@ def decode(preds, alphabet, raw=False):
 class PytorchNet:
     def __init__(self, model_path, gpu_id=None):
         """
-        初始化gluon模型
+        初始化模型
         :param model_path: 模型地址
         :param gpu_id: 在哪一块gpu上运行
         """

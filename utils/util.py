@@ -60,21 +60,6 @@ def write_json(content, fname):
         json.dump(content, handle, indent=4, sort_keys=False)
 
 
-def get_ctx(gpus):
-    import mxnet as mx
-    from mxnet import nd
-    """If GPU is available, return mx.gpu(0); else return mx.cpu()"""
-    try:
-        ctx = []
-        for gpu in gpus:
-            ctx_i = mx.gpu(gpu)
-            _ = nd.array([0], ctx=ctx_i)
-            ctx.append(ctx_i)
-    except:
-        ctx = [mx.cpu()]
-    return ctx
-
-
 def punctuation_mend(string):
     # 输入字符串或者txt文件路径
     import unicodedata

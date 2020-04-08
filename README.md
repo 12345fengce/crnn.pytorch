@@ -6,8 +6,8 @@ Origin software could be found in [crnn](https://github.com/bgshih/crnn)
 
 
 ## Requirements
-* mxnet 1.5.0
-* mxboard
+* pytorch 1.3+
+* torchvision 0.4+
 
 ## Data Preparation
 Prepare a text in the following format
