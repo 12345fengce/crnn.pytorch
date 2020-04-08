@@ -1,4 +1,4 @@
-name: crnn_lmdb
+name: crnn_lmdb_DWBlock
 base: ['config/image_dataset.yaml']
 arch:
   type: crnnModel
@@ -6,9 +6,9 @@ arch:
     binarization:
       type: None
     feature_extraction:
-      type: VGG
+      type: ResNet
       args:
-        conv_type: BasicConv
+        conv_type: DWBlock
     sequence_model:
       type: RNN
       args:
@@ -29,7 +29,7 @@ trainer:
   gpus:
     - 2
   epochs: 10
-  display_interval: 10
+  display_interval: 100
   resume_checkpoint: ''
   finetune_checkpoint: ''
   output_dir: output
@@ -41,7 +41,7 @@ dataset:
       type: LmdbDataset # 数据集类型
       args:
         data_path:
-          - /data1/gcz/ocr/dataset/test_crn/lmdb/train
+          - /data1/ocr/dataset/test_crn/lmdb/train
         data_ratio:
           - 1.0
         img_mode: RGB
@@ -55,7 +55,7 @@ dataset:
       type: LmdbDataset
       args:
         data_path:
-          - /data1/gcz/ocr/dataset/test_crn/lmdb/val
+          - /data1/ocr/dataset/test_crn/lmdb/val
         img_mode: RGB
     loader:
       batch_size: 64

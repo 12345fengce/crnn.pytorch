@@ -29,7 +29,7 @@ trainer:
   gpus:
     - 2
   epochs: 10
-  display_interval: 10
+  display_interval: 100
   resume_checkpoint: ''
   finetune_checkpoint: ''
   output_dir: output
@@ -41,7 +41,7 @@ dataset:
       type: ImageDataset # 数据集类型
       args:
         data_path:
-          - - /data1/gcz/ocr/dataset/test_crnn//train_10w.txt
+          - - /data1/ocr/dataset/test_crnn//train_10w.txt
         data_ratio:
           - 1.0
         img_mode: RGB
@@ -49,13 +49,13 @@ dataset:
       batch_size: 128
       shuffle: true
       pin_memory: false
-      num_workers: 12
+      num_workers: 16
   validate:
     dataset:
       type: ImageDataset
       args:
         data_path: # [文件，文件]，每个文件格式为 img_path \t gt
-          - /data1/gcz/ocr/dataset/test_crnn/train.txt
+          - /data1/ocr/dataset/test_crnn/train.txt
         img_mode: RGB
     loader:
       batch_size: 64

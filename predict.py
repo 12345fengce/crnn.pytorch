@@ -139,13 +139,14 @@ if __name__ == '__main__':
 
     font = FontProperties(fname=r"msyh.ttc", size=14)
 
-    img_path = '/media/zj/资料/zj/dataset/test_crnn/val/0_song5_0_3.jpg'
-    model_path = 'output/crnn_None_ResNet_RNN_CTC/checkpoint/model_best.pth'
+    img_path = '0.jpg'
+    model_path = 'output/crnn_lmdb_DWBlock_None_ResNet_RNN_CTC/checkpoint/model_best.pth'
 
     crnn_net = PytorchNet(model_path=model_path, gpu_id=0)
     start = time.time()
     for i in range(100):
-        result, img = crnn_net.predict(img_path)
+        result, img = crnn_net.predict(img_path,'vgg.pt')
+        break
     print((time.time() - start) *1000/ 100)
 
     label = result[0][0]

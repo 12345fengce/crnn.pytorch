@@ -144,7 +144,7 @@ class GhostModule(nn.Module):
 
 
 class GhostBottleneck(nn.Module):
-    def __init__(self, in_channels, out_channels, expand_size, kernel_size, stride, use_se):
+    def __init__(self, in_channels, out_channels, expand_size, kernel_size, stride, use_se=False):
         super().__init__()
         assert stride in [1, 2]
 

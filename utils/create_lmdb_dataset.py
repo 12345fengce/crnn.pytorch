@@ -70,8 +70,8 @@ def createDataset(data_list, outputPath, checkValid=True):
 
 
 if __name__ == '__main__':
-    data_list = [["/data1/gcz/ocr/dataset/test_crnn/train.txt"]]
-    save_path = '/data1/gcz/ocr/dataset/test_crn/lmdb/val'
+    data_list = [["/data1/ocr/dataset/test_crnn/train.txt"]]
+    save_path = '/data1/ocr/dataset/test_crn/lmdb/val'
     os.makedirs(save_path, exist_ok=True)
     train_data_list = get_datalist(data_list)
 
