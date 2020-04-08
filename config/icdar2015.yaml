@@ -34,13 +34,13 @@ trainer:
   output_dir: output
   tensorboard: true
 dataset:
-  alphabet: alphabet.npy
+  alphabet: dict.txt
   train:
     dataset:
       type: ImageDataset # 数据集类型
       args:
         data_path:
-          - - /media/zj/资料/zj/dataset/icdar_rec/train_linux.txt
+          - - E:\zj\dataset\test_crnn\train.txt
         data_ratio:
           - 1.0
         img_mode: RGB
@@ -54,7 +54,7 @@ dataset:
       type: ImageDataset
       args:
         data_path: # [文件，文件]，每个文件格式为 img_path \t gt
-          - /media/zj/资料/zj/dataset/icdar_rec/test_linux.txt
+          - E:\zj\dataset\test_crnn\val.txt
         img_mode: RGB
     loader:
       batch_size: 4

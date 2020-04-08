@@ -12,10 +12,10 @@ def main(config):
     from models import get_model
     from data_loader import get_dataloader
     from trainer import Trainer
-    from utils import CTCLabelConverter
+    from utils import CTCLabelConverter,load
 
     if os.path.isfile(config['dataset']['alphabet']):
-        config['dataset']['alphabet'] = str(np.load(config['dataset']['alphabet']))
+        config['dataset']['alphabet'] = ''.join(load(config['dataset']['alphabet']))
 
     prediction_type = config['arch']['args']['prediction']['type']
 
@@ -53,7 +53,7 @@ def main(config):
 def init_args():
     import argparse
     parser = argparse.ArgumentParser(description='crnn.pytorch')
-    parser.add_argument('--config_file', default='config/icdar2015_win.yaml', type=str)
+    parser.add_argument('--config_file', default='config/icdar2015.yaml', type=str)
     args = parser.parse_args()
     return args
 

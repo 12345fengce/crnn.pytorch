@@ -44,12 +44,13 @@ def get_key(label_file_list, ignore_chinese_punctuation, show_max_img=False):
 if __name__ == '__main__':
     # 根据label文本生产key
     import anyconfig
+    from utils import save
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--label_file', nargs='+', help='label file', default=[""])
     args = parser.parse_args()
 
-    config_path = 'config/icdar2015_win.yaml'
+    config_path = 'config/icdar2015.yaml'
     if os.path.exists(config_path):
         config = anyconfig.load(open(config_path, 'rb'))
         if 'base' in config:
@@ -66,5 +67,6 @@ if __name__ == '__main__':
         ignore_chinese_punctuation = True
         label_file = args.label_file
     alphabet = get_key(label_file, ignore_chinese_punctuation).replace(' ', '')
-    np.save('alphabet.npy', alphabet)
+    save(list(alphabet),'dict.txt')
+    # np.save('alphabet.npy', alphabet)
     print(alphabet)
