@@ -11,12 +11,12 @@ class BaseDataSet(Dataset):
         :param ignore_chinese_punctuation: 是否转换全角为半角
         """
         assert img_mode in ['RGB', 'BRG', 'GRAY']
-        self.data_list = self.load_data(data_path)
         self.img_mode = img_mode
         self.num_label = num_label
         self.transform = transform
         self.remove_blank = remove_blank
         self.ignore_chinese_punctuation = ignore_chinese_punctuation
+        self.data_list = self.load_data(data_path)
         self._init_pre_processes(pre_processes)
 
     def _init_pre_processes(self, pre_processes):

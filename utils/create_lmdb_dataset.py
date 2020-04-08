@@ -10,8 +10,7 @@ import cv2
 from tqdm import tqdm
 import numpy as np
 
-from data_loader import get_datalist
-from utils import punctuation_mend
+from utils import punctuation_mend,get_datalist
 
 
 def checkImageIsValid(imageBin):
@@ -71,16 +70,9 @@ def createDataset(data_list, outputPath, checkValid=True):
 
 
 if __name__ == '__main__':
-    data_list = [["/media/zj/资料/zj/dataset/train_linux.csv"]]
-    save_path = './lmdb/train'
+    data_list = [["/data1/gcz/ocr/dataset/test_crnn/train.txt"]]
+    save_path = '/data1/gcz/ocr/dataset/test_crn/lmdb/val'
     os.makedirs(save_path, exist_ok=True)
-    train_data_list, val_data_list = get_datalist(data_list, val_data_path=data_list[0])
-    train_data_list = train_data_list[0]
-    alphabet = [x[1] for x in train_data_list]
-    alphabet.extend([x[1] for x in val_data_list])
-    alphabet = [punctuation_mend(x) for x in alphabet]
-    alphabet = ''.join(sorted(set((''.join(alphabet)))))
-    alphabet.replace(' ', '')
-    np.save(os.path.join(save_path, 'alphabet.npy'), alphabet)
+    train_data_list = get_datalist(data_list)
+
     createDataset(train_data_list, save_path)
-    createDataset(val_data_list, save_path.replace('train', 'validation'))

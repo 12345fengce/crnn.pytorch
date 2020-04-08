@@ -1,4 +1,4 @@
-name: crnn
+name: crnn_lmdb
 base: ['config/image_dataset.yaml']
 arch:
   type: crnnModel
@@ -38,10 +38,10 @@ dataset:
   alphabet: dict.txt
   train:
     dataset:
-      type: ImageDataset # 数据集类型
+      type: LmdbDataset # 数据集类型
       args:
         data_path:
-          - - /data1/gcz/ocr/dataset/test_crnn//train_10w.txt
+          - /data1/gcz/ocr/dataset/test_crn/lmdb/train
         data_ratio:
           - 1.0
         img_mode: RGB
@@ -49,13 +49,13 @@ dataset:
       batch_size: 128
       shuffle: true
       pin_memory: false
-      num_workers: 12
+      num_workers: 16
   validate:
     dataset:
-      type: ImageDataset
+      type: LmdbDataset
       args:
-        data_path: # [文件，文件]，每个文件格式为 img_path \t gt
-          - /data1/gcz/ocr/dataset/test_crnn/train.txt
+        data_path:
+          - /data1/gcz/ocr/dataset/test_crn/lmdb/val
         img_mode: RGB
     loader:
       batch_size: 64

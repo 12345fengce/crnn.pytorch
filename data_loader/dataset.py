@@ -43,7 +43,7 @@ class ImageDataset(BaseDataSet):
 
 class LmdbDataset(BaseDataSet):
     def __init__(self, data_path: str, img_mode, num_label, ignore_chinese_punctuation, remove_blank, pre_processes, transform=None, **kwargs):
-        super().__init__(data_path, img_mode, num_label, ignore_chinese_punctuation, remove_blank, pre_processes, transform=None, **kwargs)
+        super().__init__(data_path, img_mode, num_label, ignore_chinese_punctuation, remove_blank, pre_processes, transform, **kwargs)
 
     def get_sample(self, index):
         index = self.data_list[index]
