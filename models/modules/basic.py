@@ -27,9 +27,9 @@ class BasicConv(nn.Module):
 
 
 class BasicBlockV2(nn.Module):
-    def __init__(self, in_channels, out_channels, stride, kernel_size=3, downsample=True, **kwargs):
+    def __init__(self, in_channels, out_channels, stride, kernel_size=3, downsample=True,use_se=False, **kwargs):
         super(BasicBlockV2, self).__init__()
-
+        self.se = SELayer(out_channels) if use_se else None
         self.bn1 = nn.BatchNorm2d(in_channels, momentum=0.9)
         self.relu1 = nn.ReLU()
         self.conv = nn.Sequential(
@@ -48,6 +48,8 @@ class BasicBlockV2(nn.Module):
         if self.downsample:
             residual = self.downsample(x)
         x = self.conv(x)
+        if self.se != None:
+            x = self.se(x)
         return x + residual
 
 
