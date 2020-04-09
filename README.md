@@ -49,9 +49,9 @@ python3 train.py --config_path config.yaml
 ```
 
 ## Predict 
-[predict.py](src/scripts/predict.py) is used to inference on single image
+[predict.py](predict.py) is used to inference on single image
 
-1. config `model_path`, `img_path` in [predict.py](src/scripts/predict.py)
+1. config `model_path`, `img_path` in [predict.py](predict.py)
 2. use following script to predict
 ```sh
 python3 predict.py
