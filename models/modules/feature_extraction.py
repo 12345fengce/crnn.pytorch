@@ -75,7 +75,7 @@ class ResNet(nn.Module):
 
         BasicBlock = globals()[conv_type]
 
-        channels = [64, 64, 64, 128, 128, 256, 256, 512, 512, 512]
+        channels = [64, 64, 64, 128, 128, 256, 256, 512, 1024, 2048]
         expand_size = [64, 64, 128, 128, 256]
         self.out_channels = channels[-1]
 
