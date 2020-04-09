@@ -18,12 +18,11 @@ Prepare a text in the following format
 
 # Performance
 
-data link [baiduyun]( https://pan.baidu.com/s/1w7KssjsOHbBTLtjaltLJ0w) code: 9p2m, the dataset is generate by  <https://github.com/Belval/TextRecognitionDataGenerator>
-dataset contains 10w images for train and 1w images for test:1w
-
-for all arch ,we stop training after 10 epochs
-
+data link [baiduyun]( https://pan.baidu.com/s/1w7KssjsOHbBTLtjaltLJ0w) code: 9p2m, the dataset is generate by  <https://github.com/Belval/TextRecognitionDataGenerator>  
+dataset contains 10w images for train and 1w images for test:1w  
+for all arch ,we stop training after 10 epochs  
 environment: cuda9.2 torch1.4 torchvision0.5
+
 | arch                    | model size(m)   | gpu mem(m) | speed(ms,avg of 100 inference)   | acc |
 | ----------------------- | ------ | -------- | ------ | ------ |
 | CNN_lite_LSTM_CTC | 6.25 | 2731     | 6.91ms | 0.8866 |
