@@ -31,9 +31,9 @@ class ImageDataset(BaseDataSet):
 
     def get_sample(self, index):
         img_path, label = self.data_list[index]
-        img = Image.open(img_path).convert('RGB')
-        if self.img_mode == 'GRAY':
-            img = img.convert('L')
+        img = cv2.imread(img_path, 1 if self.img_mode != 'GRAY' else 0)
+        if self.img_mode == 'RGB':
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         if self.remove_blank:
             label = label.replace(' ', '')
         if self.ignore_chinese_punctuation:
