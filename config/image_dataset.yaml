@@ -16,6 +16,9 @@ dataset:
               img_w: 320
               pad: true
         transforms: # 对图片进行的变换方式
+          - type: ColorJitter
+            args:
+              brightness: 0.5
           - type: ToTensor
             args: {}
           - type: Normalize
