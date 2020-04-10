@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2019/11/6 15:08
 # @Author  : zhoujun
+from PIL import Image
 from torch.utils.data import Dataset
 from data_loader.modules import *
 
 
 class BaseDataSet(Dataset):
-    def __init__(self, data_path: str, img_mode,num_label, ignore_chinese_punctuation, remove_blank, pre_processes, transform=None, **kwargs):
+    def __init__(self, data_path: str, img_mode, num_label, ignore_chinese_punctuation, remove_blank, pre_processes, transform=None, **kwargs):
         """
         :param ignore_chinese_punctuation: 是否转换全角为半角
         """
@@ -53,6 +54,7 @@ class BaseDataSet(Dataset):
         img, label = self.get_sample(index)
         img = self.apply_pre_processes(img)
         if self.transform is not None:
+            img = Image.fromarray(img)
             img = self.transform(img)
         return img, label
 
