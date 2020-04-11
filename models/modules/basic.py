@@ -5,7 +5,7 @@ import math
 import torch
 from torch import nn
 
-__all__ = ['BasicConv', 'BasicBlockV2', 'DWConv', 'DWBlock', 'SELayer', 'GhostModule', 'GhostBottleneck']
+__all__ = ['BasicConv', 'BasicBlockV2', 'DWConv', 'DWBlock', 'CBAM', 'ChannelAttention', 'GhostModule', 'GhostBottleneck']
 
 
 class BasicConv(nn.Module):
@@ -27,14 +27,14 @@ class BasicConv(nn.Module):
 
 
 class BasicBlockV2(nn.Module):
-    def __init__(self, in_channels, out_channels, stride, kernel_size=3, downsample=True,use_se=False, **kwargs):
+    def __init__(self, in_channels, out_channels, stride, kernel_size=3, downsample=True, use_cbam=False, **kwargs):
         super(BasicBlockV2, self).__init__()
-        self.se = SELayer(out_channels) if use_se else None
+        self.se = CBAM(out_channels) if use_cbam else None
         self.bn1 = nn.BatchNorm2d(in_channels, momentum=0.9)
         self.relu1 = nn.ReLU()
         self.conv = nn.Sequential(
             BasicConv(in_channels, out_channels, kernel_size, stride, kernel_size // 2, bias=False),
-            BasicConv(out_channels, out_channels, kernel_size, 1, kernel_size // 2, bias=False,use_bn=False,use_relu=False),
+            BasicConv(out_channels, out_channels, kernel_size, 1, kernel_size // 2, bias=False, use_bn=False, use_relu=False),
         )
         if downsample:
             self.downsample = BasicConv(in_channels, out_channels, 1, stride, bias=False, use_bn=False, use_relu=False)
@@ -69,10 +69,10 @@ class DWConv(nn.Module):
 class DWBlock(nn.Module):
     '''expand + depthwise + pointwise'''
 
-    def __init__(self, in_channels, out_channels, expand_size, kernel_size, stride, use_se=False):
+    def __init__(self, in_channels, out_channels, expand_size, kernel_size, stride, use_cbam=False):
         super().__init__()
         self.stride = stride
-        self.se = SELayer(out_channels) if use_se else None
+        self.se = CBAM(out_channels) if use_cbam else None
         # pw
         self.conv1 = BasicConv(in_channels, expand_size, kernel_size=1, stride=1, padding=0, bias=False)
         # dw
@@ -110,21 +110,69 @@ def _make_divisible(v, divisor, min_value=None):
     return new_v
 
 
-class SELayer(nn.Module):
-    def __init__(self, channel, reduction=4):
+class ChannelAttention(nn.Module):
+    def __init__(self, channel, reduction=16, use_max_pool=True):
+        """
+        当 use_max_pool为空时，变成SELayer
+        Args:
+            channel:
+            reduction:
+            use_max_pool:
+        """
         super().__init__()
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.max_pool = nn.AdaptiveMaxPool2d((1, 1)) if use_max_pool else None
         self.fc = nn.Sequential(
-            nn.Linear(channel, channel // reduction),
-            nn.ReLU(inplace=True),
-            nn.Linear(channel // reduction, channel), )
+            BasicConv(channel, channel // reduction, kernel_size=1, bias=False),
+            nn.ReLU(True),
+            BasicConv(channel // reduction, channel, kernel_size=1, bias=False),
+        )
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        b, c, _, _ = x.size()
-        y = self.avg_pool(x).view(b, c)
-        y = self.fc(y).view(b, c, 1, 1)
-        y = torch.clamp(y, 0, 1)
+        y1 = self.avg_pool(x)
+        y1 = self.fc(y1)
+        if self.max_pool is not None:
+            y2 = self.max_pool(x)
+            y2 = self.fc(y2)
+            y = y1 + y2
+        else:
+            y = y1
+        y = self.sigmoid(y)
         return x * y
+
+
+class SpartialAttention(nn.Module):
+    def __init__(self, kernel_size=7):
+        super().__init__()
+        assert kernel_size % 2 == 1, "kernel_size = {}".format(kernel_size)
+        padding = (kernel_size - 1) // 2
+        self.layer = nn.Sequential(
+            BasicConv(2, 1, kernel_size=kernel_size, padding=padding),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x):
+        avg_mask = torch.mean(x, dim=1, keepdim=True)
+        max_mask, _ = torch.max(x, dim=1, keepdim=True)
+        mask = torch.cat([avg_mask, max_mask], dim=1)
+        mask = self.layer(mask)
+        return x * mask
+
+
+class CBAM(nn.Module):
+    def __init__(self, gate_channels, reduction_ratio=16, no_spatial=False):
+        super(CBAM, self).__init__()
+        self.ChannelGate = ChannelAttention(gate_channels, reduction_ratio)
+        self.no_spatial = no_spatial
+        if not no_spatial:
+            self.SpatialGate = SpartialAttention()
+
+    def forward(self, x):
+        x_out = self.ChannelGate(x)
+        if not self.no_spatial:
+            x_out = self.SpatialGate(x_out)
+        return x_out
 
 
 class GhostModule(nn.Module):
@@ -146,7 +194,7 @@ class GhostModule(nn.Module):
 
 
 class GhostBottleneck(nn.Module):
-    def __init__(self, in_channels, out_channels, expand_size, kernel_size, stride, use_se=False):
+    def __init__(self, in_channels, out_channels, expand_size, kernel_size, stride, use_cbam=False):
         super().__init__()
         assert stride in [1, 2]
 
@@ -156,7 +204,7 @@ class GhostBottleneck(nn.Module):
             # dw
             BasicConv(expand_size, expand_size, kernel_size, stride, kernel_size // 2, use_relu=False) if stride == 2 else nn.Sequential(),
             # Squeeze-and-Excite
-            SELayer(expand_size) if use_se else nn.Sequential(),
+            CBAM(expand_size) if use_cbam else nn.Sequential(),
             # pw-linear
             GhostModule(expand_size, out_channels, kernel_size=1, relu=False),
         )
