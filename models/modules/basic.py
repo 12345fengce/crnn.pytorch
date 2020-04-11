@@ -120,9 +120,8 @@ class ChannelAttention(nn.Module):
         self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
         self.max_pool = nn.AdaptiveMaxPool2d((1, 1)) if use_max_pool else None
         self.fc = nn.Sequential(
-            BasicConv(channel, channel // reduction, kernel_size=1, bias=False),
-            nn.ReLU(True),
-            BasicConv(channel // reduction, channel, kernel_size=1, bias=False),
+            BasicConv(channel, channel // reduction, kernel_size=1, bias=False,use_bn=False),
+            BasicConv(channel // reduction, channel, kernel_size=1, bias=False,use_bn=False,use_relu=False),
         )
         self.sigmoid = nn.Sigmoid()
 

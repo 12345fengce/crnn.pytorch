@@ -36,16 +36,16 @@ class ReaNet(nn.Module):
         super().__init__()
         self.out_channels = out_channels
 
-    def _make_layer(self, block, planes, blocks, stride=1):
+    def _make_layer(self, block, planes, blocks, stride=1, use_cbam=False):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
             downsample = BasicConv(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False, use_bn=True)
 
         layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample))
+        layers.append(block(self.inplanes, planes, stride, downsample, use_cbam=use_cbam))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes))
+            layers.append(block(self.inplanes, planes, use_cbam=use_cbam))
 
         return nn.Sequential(*layers)
 
@@ -120,16 +120,16 @@ class ResNet_MT(ReaNet):
         self.inplanes = output_channel_block[0]
         self.conv0 = BasicConv(in_channels, output_channel_block[0], kernel_size=3, stride=1, padding=1, bias=False, use_bn=True, use_relu=True)
 
-        self.layer1 = self._make_layer(block, output_channel_block[1], layers[0])
+        self.layer1 = self._make_layer(block, output_channel_block[1], layers[0], use_cbam=True)
         self.maxpool1 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        self.layer2 = self._make_layer(block, output_channel_block[2], layers[1], stride=1)
+        self.layer2 = self._make_layer(block, output_channel_block[2], layers[1], stride=1, use_cbam=True)
         self.maxpool2 = nn.MaxPool2d(kernel_size=(2, 1), stride=(2, 1))
 
-        self.layer3 = self._make_layer(block, output_channel_block[3], layers[2], stride=1)
+        self.layer3 = self._make_layer(block, output_channel_block[3], layers[2], stride=1, use_cbam=True)
         self.maxpool3 = nn.MaxPool2d(kernel_size=(2, 1), stride=(2, 1))
 
-        self.layer4 = self._make_layer(block, output_channel_block[4], layers[3], stride=1)
+        self.layer4 = self._make_layer(block, output_channel_block[4], layers[3], stride=1, use_cbam=True)
         self.maxpool4 = nn.MaxPool2d(kernel_size=(2, 1), stride=(2, 1))
         self.conv4 = BasicConv(output_channel_block[4], out_channels, kernel_size=2, bias=False,
                                use_bn=True, use_relu=True)
@@ -154,7 +154,9 @@ class ResNet_MT(ReaNet):
 
 if __name__ == '__main__':
     import torch
+
     net = ResNet_FeatureExtractor(3, 512)
     x = torch.rand((1, 3, 32, 100))
     y = net(x)
     print(y.shape)
+    print(net)
