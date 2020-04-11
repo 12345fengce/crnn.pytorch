@@ -5,8 +5,6 @@ import math
 import torch
 from torch import nn
 
-__all__ = ['BasicConv', 'BasicBlockV2', 'DWConv', 'DWBlock', 'CBAM', 'ChannelAttention', 'GhostModule', 'GhostBottleneck']
-
 
 class BasicConv(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros', use_bn=True,
@@ -24,7 +22,6 @@ class BasicConv(nn.Module):
         if self.relu is not None:
             x = self.relu(x)
         return x
-
 
 class BasicBlockV2(nn.Module):
     def __init__(self, in_channels, out_channels, stride, kernel_size=3, downsample=True, use_cbam=False, **kwargs):
@@ -69,7 +66,7 @@ class DWConv(nn.Module):
 class DWBlock(nn.Module):
     '''expand + depthwise + pointwise'''
 
-    def __init__(self, in_channels, out_channels, expand_size, kernel_size, stride, use_cbam=False):
+    def __init__(self, in_channels, out_channels, expand_size, kernel_size, stride, use_cbam=False, **kwargs):
         super().__init__()
         self.stride = stride
         self.se = CBAM(out_channels) if use_cbam else None

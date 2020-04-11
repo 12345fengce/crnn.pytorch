@@ -112,6 +112,53 @@ class ResNet(nn.Module):
         return self.features(x)
 
 
+class ResNet_MT(nn.Module):
+    """
+    美团论文ReADS里的resnet
+    """
+
+    def __init__(self, in_channels, **kwargs):
+        super().__init__()
+        conv_type = kwargs.get('conv_type', 'BasicBlockV2')
+        assert conv_type in ['BasicBlockV2', 'DWBlock', 'GhostBottleneck']
+
+        BasicBlock = globals()[conv_type]
+
+        channels = [32, 64, 64, 128, 128, 256, 256, 512, 512, 512]
+        expand_size = [64, 64, 128, 128, 256]
+        self.out_channels = channels[-1]
+
+        self.features = nn.Sequential(
+            BasicConv(in_channels=in_channels, out_channels=channels[0], kernel_size=3, padding=1, bias=False),
+
+            BasicBlock(in_channels=channels[0], out_channels=channels[2], expand_size=expand_size[0], kernel_size=3,
+                       stride=1, use_cbam=True, downsample=False),
+            BasicBlock(in_channels=channels[2], out_channels=channels[3], expand_size=expand_size[1], kernel_size=3,
+                       stride=1, use_cbam=True, downsample=False),
+            nn.Dropout(0.2),
+
+            BasicBlock(in_channels=channels[3], out_channels=channels[4], expand_size=expand_size[2], kernel_size=3,
+                       stride=2, use_cbam=True, downsample=False),
+            BasicBlock(in_channels=channels[4], out_channels=channels[5], expand_size=expand_size[3], kernel_size=3,
+                       stride=1, use_cbam=True, downsample=False),
+            nn.Dropout(0.2),
+
+            nn.Conv2d(in_channels=channels[5], out_channels=channels[6], kernel_size=2, stride=(2, 1), padding=(0, 1),
+                      bias=False),
+
+            BasicBlock(in_channels=channels[6], out_channels=channels[7], expand_size=expand_size[4], kernel_size=3,
+                       stride=1, use_cbam=True, downsample=False),
+            nn.BatchNorm2d(512),
+            nn.ReLU(),
+            # nn.MaxPool2d(kernel_size=2, stride=(2,1)),
+            BasicConv(in_channels=channels[7], out_channels=channels[8], kernel_size=3, padding=0, bias=False),
+            BasicConv(in_channels=channels[8], out_channels=channels[9], kernel_size=2, padding=(0, 1), bias=False),
+        )
+
+    def forward(self, x):
+        return self.features(x)
+
+
 def _make_transition(in_channels, out_channels, pool_stride, pool_pad, dropout):
     out = nn.Sequential(
         nn.BatchNorm2d(in_channels),
