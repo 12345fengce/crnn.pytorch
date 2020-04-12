@@ -56,6 +56,7 @@ class BaseDataSet(Dataset):
         if self.transform is not None:
             img = Image.fromarray(img)
             img = self.transform(img)
+            img.sub_(0.5).div_(0.5)
         return img, label
 
     def __len__(self):

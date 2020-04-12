@@ -52,7 +52,7 @@ def main(config):
 def init_args():
     import argparse
     parser = argparse.ArgumentParser(description='crnn.pytorch')
-    parser.add_argument('--config_file', default='config/icdar2015_lmdb.yaml', type=str)
+    parser.add_argument('--config_file', default='config/icdar2015.yaml', type=str)
     args = parser.parse_args()
     return args
 

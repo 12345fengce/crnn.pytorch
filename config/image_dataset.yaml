@@ -15,16 +15,17 @@ dataset:
               img_h: 32
               img_w: 320
               pad: true
+              random_crop: true
         transforms: # 对图片进行的变换方式
           - type: ColorJitter
             args:
               brightness: 0.5
           - type: ToTensor
             args: {}
-          - type: Normalize
-            args:
-              mean: [0.485, 0.456, 0.406]
-              std: [0.229, 0.224, 0.225]
+#          - type: Normalize
+#            args:
+#              mean: [0.485, 0.456, 0.406]
+#              std: [0.229, 0.224, 0.225]
         img_mode: RGB
         ignore_chinese_punctuation: true
         remove_blank: true
@@ -45,13 +46,14 @@ dataset:
               img_h: 32
               img_w: 320
               pad: true
+              random_crop: false
         transforms:
           - type: ToTensor
             args: {}
-          - type: Normalize
-            args:
-              mean: [0.485, 0.456, 0.406]
-              std: [0.229, 0.224, 0.225]
+#          - type: Normalize
+#            args:
+#              mean: [0.485, 0.456, 0.406]
+#              std: [0.229, 0.224, 0.225]
         img_mode: RGB
         ignore_chinese_punctuation: true
         remove_blank: true
