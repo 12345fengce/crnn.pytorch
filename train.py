@@ -39,7 +39,7 @@ def main(config):
     num_label = model.get_batch_max_length(sample_input)
     train_loader = get_dataloader(config['dataset']['train'], num_label)
     assert train_loader is not None
-    if 'validate' in config['dataset']:
+    if 'validate' in config['dataset'] and config['dataset']['validate']['dataset']['args']['data_path'][0] is not None:
         validate_loader = get_dataloader(config['dataset']['validate'], num_label)
     else:
         validate_loader = None

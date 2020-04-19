@@ -20,13 +20,19 @@ Prepare a text in the following format
 
 data link [baiduyun]( https://pan.baidu.com/s/1w7KssjsOHbBTLtjaltLJ0w) code: 9p2m, the dataset is generate by  <https://github.com/Belval/TextRecognitionDataGenerator>  
 dataset contains 10w images for train and 1w images for test:1w  
-for all arch ,we stop training after 10 epochs  
+for all arch ,we stop training after 30 epochs  
 environment: cuda9.2 torch1.4 torchvision0.5
 
 | arch                    | model size(m)   | gpu mem(m) | speed(ms,avg of 100 inference)   | acc |
 | ----------------------- | ------ | -------- | ------ | ------ |
 | CNN_lite_LSTM_CTC | 6.25 | 2731     | 6.91ms | 0.8866 |
-| VGG(BasicConv)_LSTM_CTC | 25.45 | 3989     | 6.63ms | 0.9531 |
+| VGG(BasicConv)_LSTM_CTC(w320) | 25.45 | 2409     | 4.02ms | 0.9874 |
+| VGG(BasicConv)_LSTM_CTC(w160) | 25.45 | 2409     | 4.02ms | 0.9908 |
+| VGG(BasicConv)_LSTM_CTC(w160_no_imagenet_mean_std) | 25.45 | 2409     | 4.02ms | 0.9927 |
+| VGG(BasicConv)_LSTM_CTC(w160.sub_(0.5).div_(0.5)) | 25.45 | 2409     | 4.02ms | 0.9927 |
+| VGG(BasicConv)_LSTM_CTC(w160 origin crnn rnn) | 25.45 | 2409     | 4.02ms | 0.9922 |
+| VGG(DWconv)_LSTM_CTC(w160_no_imagenet_mean_std) | 25.45 | 2409     | 4.01ms | 0.9725 |
+| VGG(GhostModule)_LSTM_CTC(w160_no_imagenet_mean_std) | 25.45 | 2329     | 5.46ms | 0.9878 |
 | VGG(DWConv)_LSTM_CTC | 24.45 | 3985     | 6.47ms | 0.893 |
 | VGG(GhostModule)_LSTM_CTC | 9.23 | 4289     | 8.13ms | 0.04 |
 | ResNet(BasicBlockV2)_LSTM_CTC | 37.21 | 5515     | 8.6ms | 0.9608|
