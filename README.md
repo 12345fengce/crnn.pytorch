@@ -33,9 +33,7 @@ environment: cuda9.2 torch1.4 torchvision0.5
 | VGG(BasicConv)_LSTM_CTC(w160 origin crnn rnn) | 25.45 | 2409     | 4.02ms | 0.9922 |
 | VGG(DWconv)_LSTM_CTC(w160_no_imagenet_mean_std) | 25.45 | 2409     | 4.01ms | 0.9725 |
 | VGG(GhostModule)_LSTM_CTC(w160_no_imagenet_mean_std) | 25.45 | 2329     | 5.46ms | 0.9878 |
-| VGG(DWConv)_LSTM_CTC | 24.45 | 3985     | 6.47ms | 0.893 |
-| VGG(GhostModule)_LSTM_CTC | 9.23 | 4289     | 8.13ms | 0.04 |
-| ResNet(BasicBlockV2)_LSTM_CTC | 37.21 | 5515     | 8.6ms | 0.9608|
+| ResNet(BasicBlockV2)_LSTM_CTC | 37.21 | 3161     | 5.83ms | 0.9935|
 | ResNet(DWBlock_no_se)_LSTM_CTC | 19.22 | 5533     | 12ms | 0.9566|
 | ResNet(DWBlock_se)_LSTM_CTC | 19.90 |   5729   | 10ms | 0.9559 |
 | ResNet(GhostBottleneck_se)_LSTM_CTC | 23.10 | 6291     | 13ms | 0.97|
