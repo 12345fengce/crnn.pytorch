@@ -38,7 +38,6 @@ class Trainer(BaseTrainer):
             targets, targets_lengths = self.converter.encode(labels, self.batch_max_length)
             images = images.to(self.device)
             targets = targets.to(self.device)
-            break
 
             # forward
             preds = self.model(images)[0]
