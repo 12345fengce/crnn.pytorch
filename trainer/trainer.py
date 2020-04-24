@@ -28,6 +28,7 @@ class Trainer(BaseTrainer):
         epoch_start = time.time()
         batch_start = time.time()
         train_loss = 0.
+        train_acc = 0.
         for i, (images, labels) in enumerate(self.train_loader):
             if i >= self.train_loader_len:
                 break
@@ -55,6 +56,7 @@ class Trainer(BaseTrainer):
             train_loss += loss
 
             batch_dict = self.accuracy_batch(preds, labels, phase='TRAIN')
+            train_acc += batch_dict['n_correct']
             acc = batch_dict['n_correct'] / cur_batch_size
             edit_dis = batch_dict['edit_dis'] / cur_batch_size
 
@@ -72,7 +74,8 @@ class Trainer(BaseTrainer):
                         epoch, self.epochs, i + 1, self.train_loader_len, self.global_step,
                                             self.display_interval * cur_batch_size / batch_time, acc, loss, edit_dis, lr, batch_time))
                 batch_start = time.time()
-        return {'train_loss': train_loss / self.train_loader_len, 'time': time.time() - epoch_start, 'epoch': epoch, 'lr': lr}
+        return {'train_loss': train_loss / self.train_loader_len, 'time': time.time() - epoch_start, 'epoch': epoch, 'lr': lr,
+                'train_acc': train_acc / self.train_loader.dataset_len}
 
     def _eval(self):
         n_correct = 0
@@ -87,8 +90,9 @@ class Trainer(BaseTrainer):
         return {'n_correct': n_correct, 'edit_dis': edit_dis}
 
     def _on_epoch_finish(self):
-        self.logger.info('[{}/{}], train_loss: {:.4f}, time: {:.4f}, lr: {}'.format(
-            self.epoch_result['epoch'], self.epochs, self.epoch_result['train_loss'], self.epoch_result['time'], self.epoch_result['lr']))
+        self.logger.info('[{}/{}], train_acc: {:.4f}, train_loss: {:.4f}, time: {:.4f}, lr: {}'.format(
+            self.epoch_result['epoch'], self.epochs, self.epoch_result['train_acc'], self.epoch_result['train_loss'], self.epoch_result['time'],
+            self.epoch_result['lr']))
         net_save_path = '{}/model_latest.pth'.format(self.checkpoint_dir)
 
         save_best = False
@@ -113,9 +117,10 @@ class Trainer(BaseTrainer):
                 self.metrics['best_model'] = net_save_path
                 self.metrics['best_model_epoch'] = self.epoch_result['epoch']
         else:
-            if self.epoch_result['train_loss'] <= self.metrics['train_loss']:
+            if self.epoch_result['train_acc'] > self.metrics['train_acc']:
                 save_best = True
                 self.metrics['train_loss'] = self.epoch_result['train_loss']
+                self.metrics['train_acc'] = self.epoch_result['train_acc']
                 self.metrics['best_model'] = net_save_path
                 self.metrics['best_model_epoch'] = self.epoch_result['epoch']
         self._save_checkpoint(self.epoch_result['epoch'], net_save_path, save_best)

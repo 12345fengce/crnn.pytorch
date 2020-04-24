@@ -65,7 +65,7 @@ def get_key(label_file_list, ignore_chinese_punctuation, show_max_img=False):
                         img = cv2.imread(line[0])
                         h, w = img.shape[:2]
                         h_dict[h] += 1
-                        w_dict[h] += 1
+                        w_dict[w] += 1
     if show_max_img:
         print('******************分析宽度******************')
         show_dict(w_dict, 10, 'w')

@@ -129,4 +129,4 @@ def parse_config(config: dict) -> dict:
 
 
 if __name__ == '__main__':
-    print(punctuation_mend('1'))
+    print(punctuation_mend('ａｎｕｆａｃｔｕｒｉｎｇｃｏｌｔ'))
