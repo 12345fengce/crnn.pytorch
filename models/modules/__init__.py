@@ -5,5 +5,6 @@
 from .seg import UNet, ResNetFPN
 from .feature_extraction import *
 from .resnet import ResNet_FeatureExtractor, ResNet_MT
+from .resnet_torch import *
 from .sequence_modeling import RNNDecoder as RNN, CNNDecoder as CNN
 from .prediction import CTC

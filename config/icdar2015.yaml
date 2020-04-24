@@ -6,7 +6,7 @@ arch:
     binarization:
       type: None
     feature_extraction:
-      type: VGG
+      type: resnet34
       args:
         conv_type: BasicConv
     sequence_model:

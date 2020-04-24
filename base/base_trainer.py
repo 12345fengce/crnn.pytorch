@@ -54,7 +54,7 @@ class BaseTrainer:
             self.logger.info('train with pytorch {} and cpu'.format(torch.__version__))
             self.device = torch.device("cpu")
 
-        self.metrics = {'val_acc': 0, 'train_loss': float('inf'), 'best_model': ''}
+        self.metrics = {'val_acc': 0, 'train_loss': float('inf'), 'best_model': '', 'best_model_epoch': 0}
 
         self.optimizer = self._initialize('optimizer', torch.optim, model.parameters())
 

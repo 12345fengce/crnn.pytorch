@@ -102,7 +102,6 @@ if __name__ == '__main__':
     else:
         ignore_chinese_punctuation = True
         label_file = args.label_file
-    alphabet = get_key(label_file, ignore_chinese_punctuation, show_max_img=True).replace(' ', '')
-    # save(list(alphabet), 'dict.txt')
-    # np.save('alphabet.npy', alphabet)
-    # print(alphabet)
+    alphabet = get_key(label_file, ignore_chinese_punctuation, show_max_img=False).replace(' ', '')
+    save(list(alphabet), 'dict.txt')
+    print(alphabet)

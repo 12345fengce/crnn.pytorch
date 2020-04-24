@@ -97,7 +97,7 @@ if __name__ == '__main__':
     if os.path.isfile(config['dataset']['alphabet']):
         config['dataset']['alphabet'] = load(config['dataset']['alphabet'])
 
-    device = torch.device('cuda:0')
+    device = torch.device('cpu')
     net = Model(3, 3000, config['arch']['args']).to(device)
     print(net.model_name, len(config['dataset']['alphabet']))
     a = torch.randn(2, 3, 32, 320).to(device)
@@ -107,7 +107,7 @@ if __name__ == '__main__':
 
     torch.save(net.state_dict(), 'crnn_lite.pth')
     tic = time.time()
-    for i in range(10):
+    for i in range(1):
         b = net(a)[0]
     print(b.shape)
-    print((time.time() - tic) / 10)
+    print((time.time() - tic) / 1)
