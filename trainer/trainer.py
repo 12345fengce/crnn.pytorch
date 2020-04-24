@@ -114,6 +114,7 @@ class Trainer(BaseTrainer):
                 save_best = True
                 self.metrics['val_acc'] = val_acc
                 self.metrics['train_loss'] = self.epoch_result['train_loss']
+                self.metrics['train_acc'] = self.epoch_result['train_acc']
                 self.metrics['best_model'] = net_save_path
                 self.metrics['best_model_epoch'] = self.epoch_result['epoch']
         else:
