@@ -37,29 +37,29 @@ class VGG(nn.Module):
         channels = [64, 128, 256, 256, 512, 512, 512]
         self.features = nn.Sequential(
             # conv layer
-            BasicConv(in_channels=in_channels, out_channels=channels[0], kernel_size=3, padding=1),
+            BasicConv(in_channels=in_channels, out_channels=channels[0], kernel_size=3, padding=1, use_bn=False),
             nn.MaxPool2d(kernel_size=2, stride=2),
 
             # second conv layer
-            basic_conv(in_channels=channels[0], out_channels=channels[1], kernel_size=3, padding=1),
+            basic_conv(in_channels=channels[0], out_channels=channels[1], kernel_size=3, padding=1, use_bn=False),
             nn.MaxPool2d(kernel_size=2, stride=2),
 
             # third conv layer
-            basic_conv(in_channels=channels[1], out_channels=channels[2], kernel_size=3, padding=1),
+            basic_conv(in_channels=channels[1], out_channels=channels[2], kernel_size=3, padding=1, use_bn=False),
 
             # fourth conv layer
-            basic_conv(in_channels=channels[2], out_channels=channels[3], kernel_size=3, padding=1),
-            nn.MaxPool2d(kernel_size=2, stride=(2, 1), padding=(0, 1)),
+            basic_conv(in_channels=channels[2], out_channels=channels[3], kernel_size=3, padding=1, use_bn=False),
+            nn.MaxPool2d(kernel_size=(2, 1), stride=(2, 1)),
 
             # fifth conv layer
-            basic_conv(in_channels=channels[3], out_channels=channels[4], kernel_size=3, padding=1),
+            basic_conv(in_channels=channels[3], out_channels=channels[4], kernel_size=3, padding=1, bias=False),
 
             # sixth conv layer
-            basic_conv(in_channels=channels[4], out_channels=channels[5], kernel_size=3, padding=1),
-            nn.MaxPool2d(kernel_size=2, stride=(2, 1), padding=(0, 1)),
+            basic_conv(in_channels=channels[4], out_channels=channels[5], kernel_size=3, padding=1, bias=False),
+            nn.MaxPool2d(kernel_size=(2, 1), stride=(2, 1)),
 
             # seren conv layer
-            BasicConv(in_channels=channels[5], out_channels=channels[6], kernel_size=2),
+            BasicConv(in_channels=channels[5], out_channels=channels[6], kernel_size=2, use_bn=False, use_relu=True),
         )
         self.out_channels = channels[-1]
 
@@ -199,7 +199,13 @@ class DenseNet(nn.Module):
 if __name__ == '__main__':
     import torch
 
-    x = torch.zeros(1, 3, 32, 320)
-    net = ResNet(3, conv_type='BasicBlockV2')
-    y = net(x)
-    print(y.shape)
+    device = torch.device('cpu')
+    net = VGG(3).to(device)
+    a = torch.randn(2, 3, 32, 320).to(device)
+    import time
+
+    tic = time.time()
+    for i in range(1):
+        b = net(a)[0]
+    print(b.shape)
+    print((time.time() - tic) / 1)

@@ -54,7 +54,7 @@ class ReaNet(nn.Module):
 class ResNet_FeatureExtractor(ReaNet):
     """ FeatureExtractor of https://github.com/clovaai/deep-text-recognition-benchmark/blob/master/modules/feature_extraction.py """
 
-    def __init__(self, in_channels, out_channels=512):
+    def __init__(self, in_channels, out_channels=512,**kwargs):
         super().__init__(out_channels)
         layers = [1, 2, 5, 3]
         block = BasicBlock

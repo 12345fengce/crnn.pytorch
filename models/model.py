@@ -98,7 +98,7 @@ if __name__ == '__main__':
         config['dataset']['alphabet'] = load(config['dataset']['alphabet'])
 
     device = torch.device('cpu')
-    net = Model(3, 3000, config['arch']['args']).to(device)
+    net = Model(3, 95, config['arch']['args']).to(device)
     print(net.model_name, len(config['dataset']['alphabet']))
     a = torch.randn(2, 3, 32, 320).to(device)
     print(net.get_batch_max_length(a))

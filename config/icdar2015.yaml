@@ -6,11 +6,11 @@ arch:
     binarization:
       type: None
     feature_extraction:
-      type: resnet34
+      type: VGG
       args:
         conv_type: BasicConv
     sequence_model:
-      type: RNN
+      type: None
       args:
         hidden_size: 256
     prediction:

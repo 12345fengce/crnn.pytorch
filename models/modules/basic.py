@@ -51,7 +51,7 @@ class BasicBlockV2(nn.Module):
 
 
 class DWConv(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, use_bn=False):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, use_bn=False,**kwargs):
         super().__init__()
         self.use_bn = use_bn
         self.DWConv = BasicConv(in_channels, in_channels, kernel_size, stride, padding, groups=in_channels, use_bn=use_bn)
