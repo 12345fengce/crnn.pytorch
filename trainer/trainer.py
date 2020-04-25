@@ -42,7 +42,7 @@ class Trainer(BaseTrainer):
             targets = targets.to(self.device)
 
             # forward
-            preds = self.model(images, targets)[0]
+            preds = self.model(images, targets[:, :-1])[0]
             if self.model.prediction_type == 'CTC':
                 preds = preds.log_softmax(2)
                 preds_lengths = torch.Tensor([preds.size(1)] * cur_batch_size).long()
@@ -56,6 +56,7 @@ class Trainer(BaseTrainer):
             # backward
             self.optimizer.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 5)
             self.optimizer.step()
             # loss 和 acc 记录到日志
             loss = loss.item()
