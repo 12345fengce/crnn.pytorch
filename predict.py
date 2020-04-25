@@ -5,39 +5,9 @@ import os
 import cv2
 import numpy as np
 import torch
+from utils import CTCLabelConverter,AttnLabelConverter
 
 from data_loader import get_transforms
-
-
-def decode(preds, alphabet, raw=False):
-    if len(preds.shape) > 2:
-        preds_idx = preds.argmax(axis=2)
-        preds_prob = preds.max(axis=2)
-    else:
-        preds_idx = preds
-        preds_prob = np.ones_like(preds)
-    result_list = []
-    for word, prob in zip(preds_idx, preds_prob):
-        if raw:
-            result_list.append((''.join([alphabet[int(i)] for i in word]), prob))
-        else:
-            result = []
-            conf = []
-            try:
-
-                for i, index in enumerate(word):
-                    if i < len(word) - 1 and word[i] == word[i + 1]:  # Hack to decode label as well
-                        continue
-                    if index == 0:
-                        continue
-                    else:
-                        result.append(alphabet[int(index)])
-                        conf.append(prob[i])
-            except:
-                a = 1
-            result_list.append((''.join(result), conf))
-    return result_list
-
 
 class PytorchNet:
     def __init__(self, model_path, gpu_id=None):
@@ -78,6 +48,14 @@ class PytorchNet:
         self.net.load_state_dict(checkpoint['state_dict'])
         # self.net = torch.jit.load('crnn_lite_gpu.pt')
         self.net.to(self.device)
+        self.net.eval()
+
+        if self.net.prediction_type == 'CTC':
+            self.converter = CTCLabelConverter(config['dataset']['alphabet'])
+        elif self.net.prediction_type == 'Attn':
+            self.converter = AttnLabelConverter(config['dataset']['alphabet'])
+            sample_input = torch.zeros((2, img_channel, img_h, img_w)).to(self.device)
+            num_label = self.net.get_batch_max_length(sample_input)
 
     def predict(self, img_path, model_save_path=None):
         """
@@ -96,7 +74,7 @@ class PytorchNet:
         preds = preds.softmax(dim=2).detach().cpu().numpy()
         # result = decode(preds, self.alphabet, raw=True)
         # print(result)
-        result = decode(preds, self.alphabet)
+        result = self.converter.decode(preds)
         if model_save_path is not None:
             # 输出用于部署的模型
             save(self.net, tensor, model_save_path)
@@ -140,16 +118,17 @@ if __name__ == '__main__':
     font = FontProperties(fname=r"msyh.ttc", size=14)
 
     img_path = '0.jpg'
-    model_path = 'output/crnn_lmdb_DWBlock_None_ResNet_RNN_CTC/checkpoint/model_best.pth'
+    model_path = '/data1/gcz/ocr/crnn.pytorch/output/crnn_None_VGG_RNN_Attn/checkpoint/model_latest.pth'
 
     crnn_net = PytorchNet(model_path=model_path, gpu_id=0)
     start = time.time()
-    for i in range(100):
-        result, img = crnn_net.predict(img_path,'vgg.pt')
+    for i in range(1):
+        result, img = crnn_net.predict(img_path)
         break
-    print((time.time() - start) *1000/ 100)
+    print((time.time() - start) *1000/ 1)
 
     label = result[0][0]
-    plt.title(label, fontproperties=font)
-    plt.imshow(img.detach().cpu().numpy().squeeze().transpose((1, 2, 0)), cmap='gray')
-    plt.show()
+    print(result)
+    # plt.title(label, fontproperties=font)
+    # plt.imshow(img.detach().cpu().numpy().squeeze().transpose((1, 2, 0)), cmap='gray')
+    # plt.show()

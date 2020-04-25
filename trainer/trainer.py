@@ -19,11 +19,14 @@ class Trainer(BaseTrainer):
         if self.validate_loader is not None:
             self.logger.info(
                 'train dataset has {} samples,{} in dataloader, validate dataset has {} samples,{} in dataloader'.format(
-                    self.train_loader.dataset_len, len(train_loader), self.validate_loader.dataset_len, len(self.validate_loader)))
+                    self.train_loader.dataset_len, len(train_loader), self.validate_loader.dataset_len,
+                    len(self.validate_loader)))
         else:
-            self.logger.info('train dataset has {} samples,{} in dataloader'.format(len(self.train_loader.dataset), len(self.train_loader)))
+            self.logger.info('train dataset has {} samples,{} in dataloader'.format(len(self.train_loader.dataset),
+                                                                                    len(self.train_loader)))
 
     def _train_epoch(self, epoch):
+        self.model.train()
         epoch_start = time.time()
         batch_start = time.time()
         train_loss = 0.
@@ -43,7 +46,8 @@ class Trainer(BaseTrainer):
             if self.model.prediction_type == 'CTC':
                 preds = preds.log_softmax(2)
                 preds_lengths = torch.Tensor([preds.size(1)] * cur_batch_size).long()
-                loss = self.criterion(preds.permute(1, 0, 2), targets, preds_lengths, targets_lengths)  # text,preds_size must be cpu
+                loss = self.criterion(preds.permute(1, 0, 2), targets, preds_lengths,
+                                      targets_lengths)  # text,preds_size must be cpu
             elif self.model.prediction_type == 'Attn':
                 target = targets[:, 1:]  # without [GO] Symbol
                 loss = self.criterion(preds.view(-1, preds.shape[-1]), target.contiguous().view(-1))
@@ -74,15 +78,19 @@ class Trainer(BaseTrainer):
                 self.logger.info(
                     '[{}/{}], [{}/{}], global_step: {}, Speed: {:.1f} samples/sec, acc:{:.4f}, loss:{:.4f}, edit_dis:{:.4f} lr:{}, time:{:.2f}'.format(
                         epoch, self.epochs, i + 1, self.train_loader_len, self.global_step,
-                                            self.display_interval * cur_batch_size / batch_time, acc, loss, edit_dis, lr, batch_time))
+                                            self.display_interval * cur_batch_size / batch_time, acc, loss, edit_dis,
+                        lr, batch_time))
                 batch_start = time.time()
-        return {'train_loss': train_loss / self.train_loader_len, 'time': time.time() - epoch_start, 'epoch': epoch, 'lr': lr,
+        return {'train_loss': train_loss / self.train_loader_len, 'time': time.time() - epoch_start, 'epoch': epoch,
+                'lr': lr,
                 'train_acc': train_acc / self.train_loader.dataset_len}
 
     def _eval(self):
+        self.model.eval()
         n_correct = 0
         edit_dis = 0
         for images, labels in tqdm(self.validate_loader, desc='test model'):
+            # text_for_pred = torch.LongTensor(images.size(0), self.model.batch_max_length + 1).fill_(0).to(self.device)
             images = images.to(self.device)
             with torch.no_grad():
                 preds = self.model(images)[0]
@@ -93,7 +101,8 @@ class Trainer(BaseTrainer):
 
     def _on_epoch_finish(self):
         self.logger.info('[{}/{}], train_acc: {:.4f}, train_loss: {:.4f}, time: {:.4f}, lr: {}'.format(
-            self.epoch_result['epoch'], self.epochs, self.epoch_result['train_acc'], self.epoch_result['train_loss'], self.epoch_result['time'],
+            self.epoch_result['epoch'], self.epochs, self.epoch_result['train_acc'], self.epoch_result['train_loss'],
+            self.epoch_result['time'],
             self.epoch_result['lr']))
         net_save_path = '{}/model_latest.pth'.format(self.checkpoint_dir)
 
@@ -133,12 +142,11 @@ class Trainer(BaseTrainer):
         edit_dis = 0.0
         predictions = predictions.softmax(dim=2).detach().cpu().numpy()
         preds_str = self.converter.decode(predictions)
-        from predict import decode
-        assert preds_str[0] ==  decode(predictions,self.alphabet)[0]
         logged = False
         for (pred, pred_conf), target in zip(preds_str, labels):
             if self.use_tensorboard and not logged:
-                self.writer.add_text(tag='{}/pred'.format(phase), text_string='pred: {} -- gt:{}'.format(pred, target), global_step=self.global_step)
+                self.writer.add_text(tag='{}/pred'.format(phase), text_string='pred: {} -- gt:{}'.format(pred, target),
+                                     global_step=self.global_step)
                 logged = True
             edit_dis += Levenshtein.distance(pred, target)
             if pred == target:

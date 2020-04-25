@@ -68,6 +68,8 @@ class Attention(nn.Module):
                 probs_step = self.generator(hidden[0])
                 probs[:, i, :] = probs_step
                 _, next_input = probs_step.max(1)
+                if next_input[0] == 1: # meet end-of-sentence token
+                    break
                 targets = next_input
 
         return probs  # batch_size x num_steps x num_classes

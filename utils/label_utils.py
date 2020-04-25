@@ -16,7 +16,7 @@ class CTCLabelConverter(object):
             # NOTE: 0 is reserved for 'blank' token required by CTCLoss
             self.dict[char] = i + 1
 
-        self.character = ['[blank]'] + dict_character  # dummy '[blank]' token for CTCLoss (index 0)
+        self.character = ['[blank]'] + dict_character if '[blank]' not in dict_character else dict_character  # dummy '[blank]' token for CTCLoss (index 0)
 
     def encode(self, text, batch_max_length=None):
         """convert text-label into text-index.
@@ -61,7 +61,7 @@ class AttnLabelConverter(object):
         # [GO] for the start token of the attention decoder. [s] for end-of-sentence token.
         list_token = ['[GO]', '[s]']  # ['[s]','[UNK]','[PAD]','[GO]']
         list_character = list(character)
-        self.character = list_token + list_character
+        self.character = list_token + list_character if '[GO]' not in list_character else list_character
 
         self.dict = {}
         for i, char in enumerate(self.character):
