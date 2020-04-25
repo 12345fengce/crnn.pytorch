@@ -3,14 +3,14 @@ base: ['config/image_dataset.yaml']
 arch:
   type: crnnModel
   args:
-    binarization:
-      type: None
+    transformation:
+      type: TPS
     feature_extraction:
-      type: VGG
+      type: ResNet_FeatureExtractor
       args:
         conv_type: BasicConv
     sequence_model:
-      type: None
+      type: RNN
       args:
         hidden_size: 256
     prediction:

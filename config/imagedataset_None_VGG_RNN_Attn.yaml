@@ -1,20 +1,23 @@
-name: crnn_lmdb_DWBlock
-base: ['config/lmdb.yaml']
+name: crnn
+base: ['config/image_dataset.yaml']
 arch:
   type: crnnModel
   args:
-    binarization:
+    transformation:
       type: None
-    feature_extraction:
-      type: ResNet
       args:
-        conv_type: DWBlock
+        input_size: [32,320]
+        num_fiducial: 20
+    feature_extraction:
+      type: VGG
+      args:
+        conv_type: BasicConv
     sequence_model:
       type: RNN
       args:
         hidden_size: 256
     prediction:
-      type: CTC
+      type: Attn
 optimizer:
   type: Adam
   args:
@@ -27,9 +30,9 @@ lr_scheduler:
 trainer:
   seed: 2
   gpus:
-    - 2
+    - 0
   epochs: 10
-  display_interval: 100
+  display_interval: 10
   resume_checkpoint: ''
   finetune_checkpoint: ''
   output_dir: output
@@ -38,27 +41,27 @@ dataset:
   alphabet: dict.txt
   train:
     dataset:
-      type: LmdbDataset # 数据集类型
+      type: ImageDataset # 数据集类型
       args:
         data_path:
-          - /data1/ocr/dataset/test_crn/lmdb/train
+          - - E:\zj\dataset\test_crnn\train.txt
         data_ratio:
           - 1.0
         img_mode: RGB
     loader:
-      batch_size: 128
+      batch_size: 2
       shuffle: true
       pin_memory: false
-      num_workers: 16
+      num_workers: 6
   validate:
     dataset:
-      type: LmdbDataset
+      type: ImageDataset
       args:
-        data_path:
-          - /data1/ocr/dataset/test_crn/lmdb/val
+        data_path: # [文件，文件]，每个文件格式为 img_path \t gt
+          - E:\zj\dataset\test_crnn\val.txt
         img_mode: RGB
     loader:
-      batch_size: 64
+      batch_size: 4
       shuffle: true
       pin_memory: false
       num_workers: 6

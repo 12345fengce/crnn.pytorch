@@ -11,7 +11,7 @@ def main(config):
     from models import get_model
     from data_loader import get_dataloader
     from trainer import Trainer
-    from utils import CTCLabelConverter,load
+    from utils import CTCLabelConverter, AttnLabelConverter, load
 
     if os.path.isfile(config['dataset']['alphabet']):
         config['dataset']['alphabet'] = ''.join(load(config['dataset']['alphabet']))
@@ -22,10 +22,12 @@ def main(config):
     if prediction_type == 'CTC':
         criterion = CTCLoss(blank=0, zero_infinity=True)
         converter = CTCLabelConverter(config['dataset']['alphabet'])
-        config['dataset']['alphabet'] = converter.character
+    elif prediction_type == 'Attn':
+        criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
+        converter = AttnLabelConverter(config['dataset']['alphabet'])
     else:
         raise NotImplementedError
-
+    config['dataset']['alphabet'] = converter.character
     img_channel = 3 if config['dataset']['train']['dataset']['args']['img_mode'] != 'GRAY' else 1
     model = get_model(img_channel, len(config['dataset']['alphabet']), config['arch']['args'])
 
@@ -52,7 +54,7 @@ def main(config):
 def init_args():
     import argparse
     parser = argparse.ArgumentParser(description='crnn.pytorch')
-    parser.add_argument('--config_file', default='config/icdar2015.yaml', type=str)
+    parser.add_argument('--config_file', default='config/imagedataset_None_VGG_RNN_CTC.yaml', type=str)
     args = parser.parse_args()
     return args
 

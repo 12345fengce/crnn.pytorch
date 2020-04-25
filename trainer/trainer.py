@@ -7,7 +7,6 @@ from tqdm import tqdm
 import torch
 
 from base import BaseTrainer
-from predict import decode
 
 
 class Trainer(BaseTrainer):
@@ -40,11 +39,14 @@ class Trainer(BaseTrainer):
             targets = targets.to(self.device)
 
             # forward
-            preds = self.model(images)[0]
+            preds = self.model(images, targets)[0]
             if self.model.prediction_type == 'CTC':
                 preds = preds.log_softmax(2)
                 preds_lengths = torch.Tensor([preds.size(1)] * cur_batch_size).long()
                 loss = self.criterion(preds.permute(1, 0, 2), targets, preds_lengths, targets_lengths)  # text,preds_size must be cpu
+            elif self.model.prediction_type == 'Attn':
+                target = targets[:, 1:]  # without [GO] Symbol
+                loss = self.criterion(preds.view(-1, preds.shape[-1]), target.contiguous().view(-1))
             else:
                 raise NotImplementedError
             # backward
@@ -130,7 +132,9 @@ class Trainer(BaseTrainer):
         n_correct = 0
         edit_dis = 0.0
         predictions = predictions.softmax(dim=2).detach().cpu().numpy()
-        preds_str = decode(predictions, self.alphabet)
+        preds_str = self.converter.decode(predictions)
+        from predict import decode
+        assert preds_str[0] ==  decode(predictions,self.alphabet)[0]
         logged = False
         for (pred, pred_conf), target in zip(preds_str, labels):
             if self.use_tensorboard and not logged:

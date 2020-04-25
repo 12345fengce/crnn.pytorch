@@ -5,7 +5,6 @@ import time
 import json
 import pathlib
 from tqdm import tqdm
-from pathlib import Path
 
 
 def setup_logger(log_file_path: str = None):
@@ -127,6 +126,11 @@ def parse_config(config: dict) -> dict:
     anyconfig.merge(base_config, config)
     return base_config
 
+#网络参数数量
+def get_parameter_number(net):
+    total_num = sum(p.numel() for p in net.parameters())
+    trainable_num = sum(p.numel() for p in net.parameters() if p.requires_grad)
+    return {'Total': total_num, 'Trainable': trainable_num}
 
 if __name__ == '__main__':
     print(punctuation_mend('ａｎｕｆａｃｔｕｒｉｎｇｃｏｌｔ'))

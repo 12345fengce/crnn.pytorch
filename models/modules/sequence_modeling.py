@@ -35,10 +35,10 @@ class RNNDecoder(nn.Module):
     def __init__(self, in_channels, hidden_size=256, **kwargs):
         super(RNNDecoder, self).__init__()
         self.lstm = nn.Sequential(
-            BidirectionalLSTM(in_channels, hidden_size // 2, False),
-            BidirectionalLSTM(hidden_size, hidden_size // 4, False)
+            BidirectionalLSTM(in_channels, hidden_size, True),
+            BidirectionalLSTM(hidden_size , hidden_size, True)
         )
-        self.out_channels = hidden_size // 2
+        self.out_channels = hidden_size
 
     def forward(self, x):
         x = x.squeeze(axis=2)
