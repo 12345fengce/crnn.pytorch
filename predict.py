@@ -44,18 +44,18 @@ class PytorchNet:
         self.img_mode = config['dataset']['train']['dataset']['args']['img_mode']
         self.alphabet = alphabet
         img_channel = 3 if config['dataset']['train']['dataset']['args']['img_mode'] != 'GRAY' else 1
+
+        if config['arch']['args']['prediction']['type'] == 'CTC':
+            self.converter = CTCLabelConverter(config['dataset']['alphabet'])
+        elif config['arch']['args']['prediction']['type'] == 'Attn':
+            self.converter = AttnLabelConverter(config['dataset']['alphabet'])
         self.net = get_model(img_channel, len(self.alphabet), config['arch']['args'])
         self.net.load_state_dict(checkpoint['state_dict'])
         # self.net = torch.jit.load('crnn_lite_gpu.pt')
         self.net.to(self.device)
         self.net.eval()
-
-        if self.net.prediction_type == 'CTC':
-            self.converter = CTCLabelConverter(config['dataset']['alphabet'])
-        elif self.net.prediction_type == 'Attn':
-            self.converter = AttnLabelConverter(config['dataset']['alphabet'])
-            sample_input = torch.zeros((2, img_channel, img_h, img_w)).to(self.device)
-            num_label = self.net.get_batch_max_length(sample_input)
+        sample_input = torch.zeros((2, img_channel, img_h, img_w)).to(self.device)
+        self.net.get_batch_max_length(sample_input)
 
     def predict(self, img_path, model_save_path=None):
         """

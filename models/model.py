@@ -103,7 +103,7 @@ if __name__ == '__main__':
     import anyconfig
     from utils import parse_config, load, get_parameter_number
 
-    config = anyconfig.load(open("config/imagedataset_TPS_VGG_RNN_Attn.yaml", 'rb'))
+    config = anyconfig.load(open("config/imagedataset_None_VGG_RNN_CTC.yaml", 'rb'))
     if 'base' in config:
         config = parse_config(config)
     if os.path.isfile(config['dataset']['alphabet']):
@@ -123,4 +123,3 @@ if __name__ == '__main__':
     print(b.shape)
     print((time.time() - tic) / 1)
     print(get_parameter_number(net))
-    torch.save(net.state_dict(), '1.pth')

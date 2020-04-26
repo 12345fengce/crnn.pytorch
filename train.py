@@ -27,9 +27,8 @@ def main(config):
         converter = AttnLabelConverter(config['dataset']['alphabet'])
     else:
         raise NotImplementedError
-    config['dataset']['alphabet'] = converter.character
     img_channel = 3 if config['dataset']['train']['dataset']['args']['img_mode'] != 'GRAY' else 1
-    model = get_model(img_channel, len(config['dataset']['alphabet']), config['arch']['args'])
+    model = get_model(img_channel, len(converter.character), config['arch']['args'])
 
     img_h, img_w = 32, 100
     for process in config['dataset']['train']['dataset']['args']['pre_processes']:
