@@ -3,5 +3,5 @@
 # @Author  : zhoujun
 
 from .feature_extraction import *
-from .resnet import *
+from .resnet import ResNet_FeatureExtractor,ResNet_MT
 from .resnet_torch import *
