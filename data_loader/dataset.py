@@ -27,7 +27,7 @@ class ImageDataset(BaseDataSet):
         super().__init__(data_path, img_mode, num_label, ignore_chinese_punctuation, remove_blank, pre_processes, transform, **kwargs)
 
     def load_data(self, data_path: str) -> list:
-        return get_datalist(data_path)
+        return get_datalist(data_path,self.num_label)
 
     def get_sample(self, index):
         img_path, label = self.data_list[index]

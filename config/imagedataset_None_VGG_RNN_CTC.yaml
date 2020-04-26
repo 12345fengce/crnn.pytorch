@@ -9,9 +9,9 @@ arch:
         input_size: [32,320]
         num_fiducial: 20
     feature_extraction:
-      type: VGG
+      type: ResNet
       args:
-        conv_type: BasicConv
+        conv_type: BasicBlockV2
     sequence_model:
       type: RNN
       args:

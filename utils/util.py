@@ -91,7 +91,7 @@ def punctuation_mend(string):
     return res
 
 
-def get_datalist(data_path):
+def get_datalist(data_path, max_len):
     """
     获取训练和验证的数据list
     :param data_path: 训练的dataset文件列表，每个文件内以如下格式存储 ‘path/to/img\tlabel’
@@ -100,7 +100,7 @@ def get_datalist(data_path):
     train_data = []
     if isinstance(data_path, list):
         for p in data_path:
-            train_data.extend(get_datalist(p))
+            train_data.extend(get_datalist(p, max_len))
     else:
         with open(data_path, 'r', encoding='utf-8') as f:
             for line in tqdm(f.readlines(), desc='load data from {}'.format(data_path)):
@@ -108,6 +108,8 @@ def get_datalist(data_path):
                 if len(line) > 1:
                     img_path = pathlib.Path(line[0].strip(' '))
                     label = line[1]
+                    if len(label) > max_len:
+                        continue
                     if img_path.exists() and img_path.stat().st_size > 0:
                         train_data.append((str(img_path), label))
     return train_data
@@ -126,11 +128,13 @@ def parse_config(config: dict) -> dict:
     anyconfig.merge(base_config, config)
     return base_config
 
-#网络参数数量
+
+# 网络参数数量
 def get_parameter_number(net):
     total_num = sum(p.numel() for p in net.parameters())
     trainable_num = sum(p.numel() for p in net.parameters() if p.requires_grad)
     return {'Total': total_num, 'Trainable': trainable_num}
+
 
 class Averager(object):
     """Compute average for torch.Tensor, used for loss average."""
@@ -153,6 +157,7 @@ class Averager(object):
         if self.n_count != 0:
             res = self.sum / float(self.n_count)
         return res
+
 
 if __name__ == '__main__':
     print(punctuation_mend('ａｎｕｆａｃｔｕｒｉｎｇｃｏｌｔ'))
