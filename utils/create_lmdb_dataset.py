@@ -43,7 +43,7 @@ def createDataset(data_list, outputPath, checkValid=True):
     env = lmdb.open(outputPath, map_size=1099511627776)
     cache = {}
     cnt = 1
-    for imagePath, label in tqdm(data_list, desc='make dataset, save to {}'.format(outputPath)):
+    for imagePath, label in tqdm(data_list, desc=f'make dataset, save to {outputPath}'):
         with open(imagePath, 'rb') as f:
             imageBin = f.read()
         if checkValid:

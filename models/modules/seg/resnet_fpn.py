@@ -83,7 +83,7 @@ class ResNetFPN(nn.Module):
             'resnet101': {'models': resnet101, 'out': [256, 512, 1024, 2048]},
             'resnet152': {'models': resnet152, 'out': [256, 512, 1024, 2048]},
         }
-        assert backbone in backbone_dict, 'backbone must in: {}'.format(backbone_dict)
+        assert backbone in backbone_dict, f'backbone must in: {backbone_dict}'
         backbone_model, backbone_out = backbone_dict[backbone]['models'], backbone_dict[backbone]['out']
         self.backbone = backbone_model(pretrained=pretrained)
         self.segmentation_head = FPN(backbone_out)

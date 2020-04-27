@@ -17,7 +17,7 @@ class PytorchNet:
         :param gpu_id: 在哪一块gpu上运行
         """
         checkpoint = torch.load(model_path)
-        print('load {} epoch params'.format(checkpoint['epoch']))
+        print(f"load {checkpoint['epoch']} epoch params")
         config = checkpoint['config']
         alphabet = config['dataset']['alphabet']
         if gpu_id is not None and isinstance(gpu_id, int) and torch.cuda.is_available():

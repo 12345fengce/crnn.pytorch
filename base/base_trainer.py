@@ -46,12 +46,12 @@ class BaseTrainer:
         if len(self.config['trainer']['gpus']) > 0 and torch.cuda.is_available():
             self.with_cuda = True
             torch.backends.cudnn.benchmark = True
-            self.logger.info('train with pytorch {} gpu {}'.format(torch.__version__, self.config['trainer']['gpus']))
+            self.logger.info(f"train with pytorch {torch.__version__} gpu {self.config['trainer']['gpus']}")
             self.gpus = {i: item for i, item in enumerate(self.config['trainer']['gpus'])}
             self.device = torch.device("cuda:0")
         else:
             self.with_cuda = False
-            self.logger.info('train with pytorch {} and cpu'.format(torch.__version__))
+            self.logger.info(f'train with pytorch {torch.__version__} and cpu')
             self.device = torch.device("cpu")
 
         self.metrics = {'val_acc': 0, 'train_loss': float('inf'), 'best_model': '', 'best_model_epoch': 0, 'train_acc': 0}
@@ -88,6 +88,7 @@ class BaseTrainer:
         Full training logic
         """
         try:
+            # self._testval(max_step=10)
             for epoch in range(self.start_epoch + 1, self.epochs + 1):
                 self.epoch_result = self._train_epoch(epoch)
                 self.scheduler.step()
@@ -101,15 +102,16 @@ class BaseTrainer:
     def _train_epoch(self, epoch):
         """
         Training logic for an epoch
-
         :param epoch: Current epoch number
         """
         raise NotImplementedError
 
-    def _eval(self):
+    def _testval(self, max_step):
+        self._eval(max_step, f'test model on eval before train with {max_step} steps')
+
+    def _eval(self, max_step, desc):
         """
         eval logic for an epoch
-
         :param epoch: Current epoch number
         """
         raise NotImplementedError
@@ -141,16 +143,16 @@ class BaseTrainer:
         torch.save(state, filename)
         if save_best:
             shutil.copy(filename, os.path.join(self.checkpoint_dir, 'model_best.pth'))
-            self.logger.info("Saving current best: {}".format(file_name))
+            self.logger.info(f"Saving current best: {file_name}")
         else:
-            self.logger.info("Saving checkpoint: {}".format(filename))
+            self.logger.info(f"Saving checkpoint: {filename}")
 
     def _laod_checkpoint(self, checkpoint_path, resume):
         """
         Resume from saved checkpoints
         :param checkpoint_path: Checkpoint path to be resumed
         """
-        self.logger.info("Loading checkpoint: {} ...".format(checkpoint_path))
+        self.logger.info(f"Loading checkpoint: {checkpoint_path} ...")
         checkpoint = torch.load(checkpoint_path, map_location=torch.device('cpu'))
         self.model.load_state_dict(checkpoint['state_dict'], strict=resume)
         if resume:
@@ -166,9 +168,9 @@ class BaseTrainer:
                     for k, v in state.items():
                         if isinstance(v, torch.Tensor):
                             state[k] = v.to(self.device)
-            self.logger.info("resume from checkpoint {} (epoch {})".format(checkpoint_path, self.start_epoch))
+            self.logger.info(f"resume from checkpoint {checkpoint_path} (epoch {self.start_epoch})")
         else:
-            self.logger.info("finetune from checkpoint {}".format(checkpoint_path))
+            self.logger.info(f"finetune from checkpoint {checkpoint_path}")
 
     def _initialize(self, name, module, *args, **kwargs):
         module_name = self.config[name]['type']

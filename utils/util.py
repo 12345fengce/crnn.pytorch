@@ -28,7 +28,7 @@ def exe_time(func):
     def newFunc(*args, **args2):
         t0 = time.time()
         back = func(*args, **args2)
-        print("{} cost {:.3f}s".format(func.__name__, time.time() - t0))
+        print(f"{func.__name__} cost {time.time() - t0:.3f}s")
         return back
 
     return newFunc
@@ -103,7 +103,7 @@ def get_datalist(data_path, max_len):
             train_data.extend(get_datalist(p, max_len))
     else:
         with open(data_path, 'r', encoding='utf-8') as f:
-            for line in tqdm(f.readlines(), desc='load data from {}'.format(data_path)):
+            for line in tqdm(f.readlines(), desc=f'load data from {data_path}'):
                 line = line.strip('\n').replace('.jpg ', '.jpg\t').replace('.png ', '.png\t').split('\t')
                 if len(line) > 1:
                     img_path = pathlib.Path(line[0].strip(' '))

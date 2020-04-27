@@ -17,13 +17,10 @@ class Trainer(BaseTrainer):
         self.validate_loader = validate_loader
         self.converter = converter
         if self.validate_loader is not None:
-            self.logger.info(
-                'train dataset has {} samples,{} in dataloader, validate dataset has {} samples,{} in dataloader'.format(
-                    self.train_loader.dataset_len, len(train_loader), self.validate_loader.dataset_len,
-                    len(self.validate_loader)))
+            self.logger.info(f'train dataset has {self.train_loader.dataset_len} samples,{len(train_loader)} in dataloader,'
+                             f'validate dataset has {self.validate_loader.dataset_len} samples,{len(self.validate_loader)} in dataloader')
         else:
-            self.logger.info('train dataset has {} samples,{} in dataloader'.format(len(self.train_loader.dataset),
-                                                                                    len(self.train_loader)))
+            self.logger.info(f'train dataset has {len(self.train_loader.dataset)} samples,{len(self.train_loader)} in dataloader')
 
     def _train_epoch(self, epoch):
         self.model.train()
@@ -31,6 +28,7 @@ class Trainer(BaseTrainer):
         batch_start = time.time()
         train_loss = 0.
         train_acc = 0.
+        lr = self.optimizer.param_groups[0]['lr']
         for i, (images, labels) in enumerate(self.train_loader):
             if i >= self.train_loader_len:
                 break
@@ -77,22 +75,21 @@ class Trainer(BaseTrainer):
 
             if (i + 1) % self.display_interval == 0:
                 batch_time = time.time() - batch_start
-                self.logger.info(
-                    '[{}/{}], [{}/{}], global_step: {}, Speed: {:.1f} samples/sec, acc:{:.4f}, loss:{:.4f}, edit_dis:{:.4f} lr:{}, time:{:.2f}'.format(
-                        epoch, self.epochs, i + 1, self.train_loader_len, self.global_step,
-                                            self.display_interval * cur_batch_size / batch_time, acc, loss, edit_dis,
-                        lr, batch_time))
+                speed = self.display_interval * cur_batch_size / batch_time
+                self.logger.info(f'[{epoch}/{self.epochs}], [{i + 1}/{self.train_loader_len}], global_step: {self.global_step}, '
+                                 f'Speed: {speed:.1f} samples/sec, acc:{acc:.4f}, loss:{loss:.4f}, edit_dis:{edit_dis:.4f} lr:{lr}, time:{batch_time:.2f}')
                 batch_start = time.time()
         return {'train_loss': train_loss / self.train_loader_len, 'time': time.time() - epoch_start, 'epoch': epoch,
                 'lr': lr,
                 'train_acc': train_acc / self.train_loader.dataset_len}
 
-    def _eval(self):
+    def _eval(self, max_step=None, dest='test model'):
         self.model.eval()
         n_correct = 0
         edit_dis = 0
-        for images, labels in tqdm(self.validate_loader, desc='test model'):
-            # text_for_pred = torch.LongTensor(images.size(0), self.model.batch_max_length + 1).fill_(0).to(self.device)
+        for i, (images, labels) in enumerate(tqdm(self.validate_loader, desc=dest)):
+            if max_step is not None and i >= max_step:
+                break
             images = images.to(self.device)
             with torch.no_grad():
                 preds = self.model(images)[0]
@@ -102,11 +99,9 @@ class Trainer(BaseTrainer):
         return {'n_correct': n_correct, 'edit_dis': edit_dis}
 
     def _on_epoch_finish(self):
-        self.logger.info('[{}/{}], train_acc: {:.4f}, train_loss: {:.4f}, time: {:.4f}, lr: {}'.format(
-            self.epoch_result['epoch'], self.epochs, self.epoch_result['train_acc'], self.epoch_result['train_loss'],
-            self.epoch_result['time'],
-            self.epoch_result['lr']))
-        net_save_path = '{}/model_latest.pth'.format(self.checkpoint_dir)
+        self.logger.info(f"[{self.epoch_result['epoch']}/{self.epochs}], train_acc: {self.epoch_result['train_acc']:.4f}, \ "
+                         f"train_loss: {self.epoch_result['train_loss']:.4f}, time: {self.epoch_result['time']:.4f}, lr: {self.epoch_result['lr']}")
+        net_save_path = f'{self.checkpoint_dir}/model_latest.pth'
 
         save_best = False
         if self.validate_loader is not None:
@@ -120,8 +115,7 @@ class Trainer(BaseTrainer):
                 self.writer.add_scalar(
                     'EVAL/edit_distance', edit_dis, self.global_step)
 
-            self.logger.info(
-                '[{}/{}], val_acc: {:.6f}'.format(self.epoch_result['epoch'], self.epochs, val_acc))
+            self.logger.info(f"[{self.epoch_result['epoch']}/{self.epochs}], val_acc: {val_acc:.6f}")
 
             if val_acc >= self.metrics['val_acc']:
                 save_best = True
@@ -147,8 +141,7 @@ class Trainer(BaseTrainer):
         logged = False
         for (pred, pred_conf), target in zip(preds_str, labels):
             if self.use_tensorboard and not logged:
-                self.writer.add_text(tag='{}/pred'.format(phase), text_string='pred: {} -- gt:{}'.format(pred, target),
-                                     global_step=self.global_step)
+                self.writer.add_text(tag=f'{phase}/pred', text_string=f'pred: {pred} -- gt:{target}', global_step=self.global_step)
                 logged = True
             edit_dis += Levenshtein.distance(pred, target)
             if pred == target:
@@ -157,5 +150,5 @@ class Trainer(BaseTrainer):
 
     def _on_train_finish(self):
         for k, v in self.metrics.items():
-            self.logger.info('{}:{}'.format(k, v))
+            self.logger.info(f'{k}:{v}')
         self.logger.info('finish train')

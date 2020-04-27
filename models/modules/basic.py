@@ -141,7 +141,7 @@ class ChannelAttention(nn.Module):
 class SpartialAttention(nn.Module):
     def __init__(self, kernel_size=7):
         super().__init__()
-        assert kernel_size % 2 == 1, "kernel_size = {}".format(kernel_size)
+        assert kernel_size % 2 == 1, f"kernel_size = {kernel_size}"
         padding = (kernel_size - 1) // 2
         self.layer = nn.Sequential(
             BasicConv(2, 1, kernel_size=kernel_size, padding=padding),

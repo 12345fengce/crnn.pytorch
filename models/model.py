@@ -48,8 +48,7 @@ class Model(nn.Module):
         self.prediction, self.prediction_type = init_modules(config, 'prediction', in_channels=in_channels,
                                                              n_class=n_class, **arg)
 
-        self.model_name = '{}_{}_{}_{}'.format(self.transformation_type, self.feature_extraction_type,
-                                               self.sequence_model_type, self.prediction_type)
+        self.model_name = f'{self.transformation_type}_{self.feature_extraction_type}_{self.sequence_model_type}_{self.prediction_type}'
         self.batch_max_length = -1
         self.init()
 

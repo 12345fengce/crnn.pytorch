@@ -9,9 +9,9 @@ arch:
         input_size: [32,320]
         num_fiducial: 20
     feature_extraction:
-      type: ResNet
+      type: VGG
       args:
-        conv_type: BasicBlockV2
+        conv_type: BasicConv
     sequence_model:
       type: RNN
       args:
@@ -32,7 +32,7 @@ trainer:
   gpus:
     - 0
   epochs: 10
-  display_interval: 10
+  display_interval: 1
   resume_checkpoint: ''
   finetune_checkpoint: ''
   output_dir: output
@@ -44,10 +44,31 @@ dataset:
       type: ImageDataset # 数据集类型
       args:
         data_path:
-          - - E:\zj\dataset\test_crnn\train.txt
+          - - D:\dataset\data\train_win.txt
         data_ratio:
           - 1.0
+        pre_processes: # 数据的预处理过程，包含augment和预处理
+#          - type: IaaAugment # 使用imgaug进行变换
+#          - type: RandomAug # 进行变换扭曲变换
+          - type: Resize
+            args:
+              img_h: 32
+              img_w: 320
+              pad: true
+              random_crop: false
+        transforms: # 对图片进行的变换方式
+          - type: ColorJitter
+            args:
+              brightness: 0.5
+          - type: ToTensor
+            args: {}
+          - type: Normalize
+            args:
+              mean: [0.485, 0.456, 0.406]
+              std: [0.229, 0.224, 0.225]
         img_mode: RGB
+        ignore_chinese_punctuation: true
+        remove_blank: true
     loader:
       batch_size: 16
       shuffle: true
@@ -58,8 +79,24 @@ dataset:
       type: ImageDataset
       args:
         data_path: # [文件，文件]，每个文件格式为 img_path \t gt
-          - E:\zj\dataset\test_crnn\val.txt
+          - D:\dataset\data\val_win.txt
+        pre_processes:
+          - type: Resize
+            args:
+              img_h: 32
+              img_w: 320
+              pad: true
+              random_crop: false
+        transforms:
+          - type: ToTensor
+            args: {}
+          - type: Normalize
+            args:
+              mean: [0.485, 0.456, 0.406]
+              std: [0.229, 0.224, 0.225]
         img_mode: RGB
+        ignore_chinese_punctuation: true
+        remove_blank: true
     loader:
       batch_size: 4
       shuffle: true

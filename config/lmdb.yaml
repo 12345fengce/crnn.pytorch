@@ -1,5 +1,5 @@
 dataset:
-  alphabet: alphabet.npy
+  alphabet: dict.txt
   train:
     dataset:
       type: LmdbDataset # 数据集类型

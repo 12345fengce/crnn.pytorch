@@ -79,9 +79,9 @@ pbar = tqdm(total=len(strs))
 with open(os.path.join(save_dir, 'train_10w.txt'), mode='w', encoding='utf8') as f:
     i = 0
     for img, text in generator:
-        img_path = os.path.join(img_folder,'{}.jpg'.format(i))
+        img_path = os.path.join(img_folder,f'{i}.jpg')
         img.save(img_path)
-        f.write('{}\t{}\n'.format(img_path,text))
+        f.write(f'{img_path}\t{text}\n')
         i+=1
         if i >= len(strs):
             break

@@ -1,5 +1,5 @@
 dataset:
-  alphabet: alphabet.npy
+  alphabet: dict.txt
   train:
     dataset:
       type: ImageDataset # 数据集类型

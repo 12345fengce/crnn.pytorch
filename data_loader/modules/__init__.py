@@ -6,3 +6,4 @@
 '''
 from .augment import IaaAugment
 from .resize import Resize
+from .Text_Image_Augmentation_python import RandomAug
