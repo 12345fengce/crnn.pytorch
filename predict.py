@@ -49,7 +49,7 @@ class PytorchNet:
             self.converter = CTCLabelConverter(config['dataset']['alphabet'])
         elif config['arch']['args']['prediction']['type'] == 'Attn':
             self.converter = AttnLabelConverter(config['dataset']['alphabet'])
-        self.net = get_model(img_channel, len(self.alphabet), config['arch']['args'])
+        self.net = get_model(img_channel, len(self.converter.character), config['arch']['args'])
         self.net.load_state_dict(checkpoint['state_dict'])
         # self.net = torch.jit.load('crnn_lite_gpu.pt')
         self.net.to(self.device)
