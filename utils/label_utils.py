@@ -29,10 +29,14 @@ class CTCLabelConverter(object):
             length: length of each text. [batch_size]
         """
         length = [len(s) for s in text]
-        text = ''.join(text)
-        text = [self.dict[char] for char in text]
-
-        return (torch.Tensor(text).long(), torch.Tensor(length).long())
+        # text = ''.join(text)
+        # text = [self.dict[char] for char in text]
+        d = []
+        for s in text:
+            t = [self.dict[char] for char in s]
+            t.extend([0] * (batch_max_length - len(s)))
+            d.append(t)
+        return (torch.tensor(d, dtype=torch.long), torch.tensor(length, dtype=torch.long))
 
     def decode(self, preds, raw=False):
         """ convert text-index into text-label. """

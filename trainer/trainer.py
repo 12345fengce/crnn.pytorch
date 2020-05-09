@@ -43,9 +43,8 @@ class Trainer(BaseTrainer):
             if self.model.prediction_type == 'CTC':
                 preds = self.model(images)[0]
                 preds = preds.log_softmax(2)
-                preds_lengths = torch.Tensor([preds.size(1)] * cur_batch_size).long()
-                loss = self.criterion(preds.permute(1, 0, 2), targets, preds_lengths,
-                                      targets_lengths)  # text,preds_size must be cpu
+                preds_lengths = torch.tensor([preds.size(1)] * cur_batch_size, dtype=torch.long)
+                loss = self.criterion(preds.permute(1, 0, 2), targets, preds_lengths, targets_lengths)  # text,preds_size must be cpu
             elif self.model.prediction_type == 'Attn':
                 preds = self.model(images, targets[:, :-1])[0]
                 target = targets[:, 1:]  # without [GO] Symbol
