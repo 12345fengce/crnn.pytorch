@@ -120,8 +120,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False,
-                 groups=1, width_per_group=64, replace_stride_with_dilation=None,
+    def __init__(self, block, layers, zero_init_residual=False, groups=1, width_per_group=64, replace_stride_with_dilation=None,
                  norm_layer=None, **kwargs):
         super(ResNet, self).__init__()
         if norm_layer is None:
@@ -140,7 +139,7 @@ class ResNet(nn.Module):
                              "or a 3-element tuple, got {}".format(replace_stride_with_dilation))
         self.groups = groups
         self.base_width = width_per_group
-        self.conv1 = nn.Conv2d(in_channels, self.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
+        self.conv1 = nn.Conv2d(in_channels, self.inplanes, kernel_size=3, stride=2, padding=1, bias=False)
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
 
@@ -152,7 +151,14 @@ class ResNet(nn.Module):
         self.maxpool3 = nn.MaxPool2d(kernel_size=(2, 1), stride=(2, 1))
         self.layer4 = self._make_layer(block, 512, layers[3], stride=1, dilate=replace_stride_with_dilation[2])
 
-        self.out_conv = nn.Conv2d(512, self.out_channels, kernel_size=2, stride=2, bias=False)
+        self.out_conv = nn.Sequential(
+            nn.Conv2d(512, self.out_channels, kernel_size=2, stride=(2, 1), bias=False),
+            norm_layer(self.out_channels),
+            nn.ReLU(),
+            # nn.Conv2d(512, 512, kernel_size=2, stride=1, padding=0, bias=False),
+            # norm_layer(512),
+            # nn.ReLU()
+        )
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):

@@ -171,5 +171,3 @@ if __name__ == '__main__':
     print(b.shape)
     print((time.time() - tic) / 1)
     # print(net)
-    torch.save(net.state_dict(), '1.pth')
-    print(get_parameter_number(net))
