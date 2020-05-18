@@ -157,7 +157,7 @@ class ResNet(nn.Module):
         self.layer4 = self._make_layer(block, 512, layers[3], stride=1, dilate=replace_stride_with_dilation[2])
 
         self.out_conv = nn.Sequential(
-            nn.Conv2d(512, self.out_channels, kernel_size=2, stride=(2, 1), bias=False),
+            nn.Conv2d(512 * block.expansion, self.out_channels, kernel_size=2, stride=(2, 1), bias=False),
             norm_layer(self.out_channels),
             nn.ReLU(),
         )
@@ -360,7 +360,7 @@ def wide_resnet101_2(pretrained=False, progress=True, **kwargs):
 if __name__ == '__main__':
     import torch
 
-    net = resnet18(in_channels=3, out_channels=512)
+    net = resnet50(in_channels=3, out_channels=512)
     x = torch.rand((1, 3, 32, 320))
     y = net(x)
     print(y.shape)
