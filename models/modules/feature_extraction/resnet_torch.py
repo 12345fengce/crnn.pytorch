@@ -139,9 +139,14 @@ class ResNet(nn.Module):
                              "or a 3-element tuple, got {}".format(replace_stride_with_dilation))
         self.groups = groups
         self.base_width = width_per_group
-        self.conv1 = nn.Conv2d(in_channels, self.inplanes, kernel_size=3, stride=2, padding=1, bias=False)
-        self.bn1 = norm_layer(self.inplanes)
-        self.relu = nn.ReLU(inplace=True)
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(in_channels, self.inplanes, kernel_size=3, stride=2, padding=1, bias=False),
+            norm_layer(self.inplanes),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(self.inplanes, self.inplanes, kernel_size=3, stride=1, padding=1, bias=False),
+            norm_layer(self.inplanes),
+            nn.ReLU(inplace=True)
+        )
 
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.maxpool1 = nn.MaxPool2d(kernel_size=2, stride=2)
@@ -155,9 +160,6 @@ class ResNet(nn.Module):
             nn.Conv2d(512, self.out_channels, kernel_size=2, stride=(2, 1), bias=False),
             norm_layer(self.out_channels),
             nn.ReLU(),
-            # nn.Conv2d(512, 512, kernel_size=2, stride=1, padding=0, bias=False),
-            # norm_layer(512),
-            # nn.ReLU()
         )
 
         for m in self.modules():
@@ -204,8 +206,6 @@ class ResNet(nn.Module):
     def _forward_impl(self, x):
         # See note [TorchScript super()]
         x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
 
         x = self.layer1(x)
         x = self.maxpool1(x)
