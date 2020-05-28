@@ -114,7 +114,8 @@ class Trainer(BaseTrainer):
                 self.writer.add_scalar(
                     'EVAL/edit_distance', edit_dis, self.global_step)
 
-            self.logger.info(f"[{self.epoch_result['epoch']}/{self.epochs}], val_acc: {val_acc:.6f}")
+            self.logger.info(f"[{self.epoch_result['epoch']}/{self.epochs}], val_acc: {val_acc:.6f}, "
+                             f"best acc: {self.metrics['val_acc']},best model epoch: {self.metrics['best_model_epoch']}")
 
             if val_acc >= self.metrics['val_acc']:
                 save_best = True
