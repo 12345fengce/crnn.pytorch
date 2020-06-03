@@ -122,15 +122,17 @@ class Trainer(BaseTrainer):
                 self.metrics['val_acc'] = val_acc
                 self.metrics['train_loss'] = self.epoch_result['train_loss']
                 self.metrics['train_acc'] = self.epoch_result['train_acc']
-                self.metrics['best_model'] = net_save_path
                 self.metrics['best_model_epoch'] = self.epoch_result['epoch']
         else:
             if self.epoch_result['train_acc'] > self.metrics['train_acc']:
                 save_best = True
                 self.metrics['train_loss'] = self.epoch_result['train_loss']
                 self.metrics['train_acc'] = self.epoch_result['train_acc']
-                self.metrics['best_model'] = net_save_path
                 self.metrics['best_model_epoch'] = self.epoch_result['epoch']
+        best_str = 'current best, '
+        for k, v in self.metrics.items():
+            best_str += '{}: {:.6f}, '.format(k, v)
+        self.logger.info(best_str)
         self._save_checkpoint(self.epoch_result['epoch'], net_save_path, save_best)
 
     def accuracy_batch(self, predictions, labels, phase):
