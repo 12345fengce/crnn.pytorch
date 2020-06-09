@@ -31,7 +31,6 @@ class Trainer(BaseTrainer):
         train_acc = 0.
         lr = self.optimizer.param_groups[0]['lr']
         for i, (images, labels) in enumerate(self.train_loader):
-            break
             if i >= self.train_loader_len:
                 break
             self.global_step += 1
@@ -96,7 +95,6 @@ class Trainer(BaseTrainer):
             batch_dict = self.accuracy_batch(preds, labels, phase='VAL')
             n_correct += batch_dict['n_correct']
             norm_edit_dis += batch_dict['norm_edit_dis']
-            break
         return {'n_correct': n_correct, 'norm_edit_dis': norm_edit_dis}
 
     def _on_epoch_finish(self):
