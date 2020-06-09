@@ -86,7 +86,7 @@ if __name__ == '__main__':
     parser.add_argument('--label_file', nargs='+', help='label file', default=[""])
     args = parser.parse_args()
 
-    config_path = 'config/imagedataset_TPS_VGG_RNN_Attn.yaml'
+    config_path = 'config/imagedataset_None_VGG_RNN_CTC.yaml'
     if os.path.exists(config_path):
         config = anyconfig.load(open(config_path, 'rb'))
         if 'base' in config:
