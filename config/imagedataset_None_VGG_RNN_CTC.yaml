@@ -16,9 +16,9 @@ arch:
     type: CTC # CTC or Attention, Attention 必须和 RNNDecoder一起使用
     hidden_size: 256
 optimizer:
-  type: Adam
+  type: SGD # Adagrad
   args:
-    lr: 0.001
+    lr: 0.01
 lr_scheduler:
   type: StepLR
   args:
