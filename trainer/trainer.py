@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2018/8/23 22:20
 # @Author  : zhoujun
-from addict import Dict
+import os
 import shutil
 import time
 import Levenshtein
@@ -9,6 +9,7 @@ from tqdm import tqdm
 import torch
 
 from base import BaseTrainer
+from utils import save
 
 
 class Trainer(BaseTrainer):
@@ -25,6 +26,9 @@ class Trainer(BaseTrainer):
             self.logger.info(f'train dataset has {len(self.train_loader.dataset)} samples,{len(self.train_loader)} in dataloader')
 
         self.run_time_dict = {}
+        # 保存本次实验的alphabet 到模型保存的地方
+        self.alphabet = config['dataset']['alphabet']
+        save(self.alphabet, os.path.join(self.save_dir, 'dict.txt'))
         self.metrics = {'val_acc': 0,
                         'train_loss': float('inf'),
                         'best_acc_epoch': 0,
@@ -97,7 +101,7 @@ class Trainer(BaseTrainer):
 
         acc = batch_out['n_correct'] / batch_out['batch_size']
         norm_edit_dis = 1 - batch_out['norm_edit_dis'] / batch_out['batch_size']
-        if self.use_tensorboard:
+        if self.tensorboard_enable:
             # write tensorboard
             self.writer.add_scalar('TRAIN/loss', batch_out['loss'], self.global_step)
             self.writer.add_scalar('TRAIN/acc', acc, self.global_step)
@@ -105,9 +109,9 @@ class Trainer(BaseTrainer):
             self.writer.add_scalar('TRAIN/lr', self.run_time_dict['lr'], self.global_step)
             self.writer.add_text('Train/pred_gt', ' || '.join(batch_out['show_str'][:10]), self.global_step)
 
-        if self.global_step % self.display_interval == 0:
+        if self.global_step % self.log_iter == 0:
             batch_time = time.time() - self.run_time_dict['batch_start']
-            speed = self.display_interval * batch_out['batch_size'] / batch_time
+            speed = self.log_iter * batch_out['batch_size'] / batch_time
             self.logger.info(f"[{self.run_time_dict['epoch']}/{self.epochs}], "
                              f"[{self.run_time_dict['iter'] + 1}/{self.train_loader_len}], global_step: {self.global_step}, "
                              f"Speed: {speed:.1f} samples/sec, loss:{batch_out['loss']:.4f}, "
@@ -139,7 +143,7 @@ class Trainer(BaseTrainer):
             val_acc = epoch_eval_dict['n_correct'] / self.validate_loader.dataset_len
             norm_edit_dis = 1 - epoch_eval_dict['norm_edit_dis'] / self.validate_loader.dataset_len
 
-            if self.use_tensorboard:
+            if self.tensorboard_enable:
                 self.writer.add_scalar('EVAL/acc', val_acc, self.global_step)
                 self.writer.add_scalar('EVAL/edit_distance', norm_edit_dis, self.global_step)
 

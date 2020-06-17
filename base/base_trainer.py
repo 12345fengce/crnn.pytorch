@@ -8,7 +8,7 @@ import pathlib
 from pprint import pformat
 import traceback
 import torch
-from utils import setup_logger, save
+from utils import setup_logger
 
 
 class BaseTrainer:
@@ -19,24 +19,21 @@ class BaseTrainer:
         config['name'] = config['name'] + '_' + model.name
         self.save_dir = os.path.join(config['trainer']['output_dir'], config['name'])
         self.checkpoint_dir = os.path.join(self.save_dir, 'checkpoint')
-        self.alphabet = config['dataset']['alphabet']
 
         if config['trainer']['resume_checkpoint'] == '' and config['trainer']['finetune_checkpoint'] == '':
             shutil.rmtree(self.save_dir, ignore_errors=True)
         if not os.path.exists(self.checkpoint_dir):
             os.makedirs(self.checkpoint_dir)
-        # 保存本次实验的alphabet 到模型保存的地方
-        save(self.alphabet, os.path.join(self.save_dir, 'dict.txt'))
+
         self.global_step = 0
         self.start_epoch = 0
         self.config = config
-
         self.model = model
         self.criterion = criterion
         # logger
-        self.use_tensorboard = self.config['trainer']['tensorboard']
+        self.tensorboard_enable = self.config['trainer']['tensorboard']
         self.epochs = self.config['trainer']['epochs']
-        self.display_interval = self.config['trainer']['display_interval']
+        self.log_iter = self.config['trainer']['log_iter']
 
         self.logger = setup_logger(os.path.join(self.save_dir, 'train.log'))
         self.logger.info(pformat(self.config))
@@ -69,7 +66,7 @@ class BaseTrainer:
         if torch.cuda.device_count() > 1:
             self.model = torch.nn.DataParallel(model)
 
-        if self.use_tensorboard:
+        if self.tensorboard_enable:
             os.environ["TF_CPP_MIN_LOG_LEVEL"] = '3'  # 只显示 Error
             from torch.utils.tensorboard import SummaryWriter
             self.writer = SummaryWriter(self.save_dir)
@@ -94,7 +91,7 @@ class BaseTrainer:
                 self._on_epoch_finish()
         except:
             self.logger.error(traceback.format_exc())
-        if self.use_tensorboard:
+        if self.tensorboard_enable:
             self.writer.close()
         self._on_train_finish()
 

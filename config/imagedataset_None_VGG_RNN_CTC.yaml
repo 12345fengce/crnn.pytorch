@@ -29,7 +29,7 @@ trainer:
   gpus:
     - 0
   epochs: 10
-  display_interval: 10
+  log_iter: 10
   resume_checkpoint: ''
   finetune_checkpoint: ''
   output_dir: output
