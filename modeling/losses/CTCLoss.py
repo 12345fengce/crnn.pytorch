@@ -6,9 +6,9 @@ from torch import nn
 
 
 class CTCLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, blank=0, zero_infinity=True):
         super().__init__()
-        self.func = nn.CTCLoss(blank=0, zero_infinity=True)
+        self.func = nn.CTCLoss(blank=blank, zero_infinity=zero_infinity)
 
     def forward(self, preds, batch_data):
         cur_batch_size = batch_data['img'].shape[0]

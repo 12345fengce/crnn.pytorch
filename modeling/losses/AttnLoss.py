@@ -6,9 +6,9 @@ from torch import nn
 
 
 class AttnLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, ignore_index=0):
         super().__init__()
-        self.func = nn.CrossEntropyLoss(ignore_index=0)
+        self.func = nn.CrossEntropyLoss(ignore_index=ignore_index)
 
     def forward(self, preds, batch_data):
         target = batch_data['targets'][:, 1:]  # without [GO] Symbol

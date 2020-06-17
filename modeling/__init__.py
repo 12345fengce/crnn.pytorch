@@ -1,7 +1,7 @@
 from .model import Model
-# from .losses import build_loss
+from .losses import build_loss
 
-# __all__ = ['build_loss', 'build_model']
+__all__ = ['build_loss', 'build_model']
 support_model = ['Model']
 
 

@@ -7,12 +7,10 @@ import os
 def main(config):
     import torch
 
-    from modeling import build_model
+    from modeling import build_model, build_loss
     from data_loader import get_dataloader
     from trainer import Trainer
     from utils import CTCLabelConverter, AttnLabelConverter, load
-    from modeling.losses.CTCLoss import CTCLoss
-    from modeling.losses.AttnLoss import AttnLoss
     if os.path.isfile(config['dataset']['alphabet']):
         config['dataset']['alphabet'] = ''.join(load(config['dataset']['alphabet']))
 
@@ -20,10 +18,10 @@ def main(config):
 
     # loss 设置
     if prediction_type == 'CTC':
-        criterion = CTCLoss()
+        criterion = build_loss('CTCLoss')
         converter = CTCLabelConverter(config['dataset']['alphabet'])
     elif prediction_type == 'Attention':
-        criterion = AttnLoss()
+        criterion = build_loss('AttnLoss')
         converter = AttnLabelConverter(config['dataset']['alphabet'])
     else:
         raise NotImplementedError
