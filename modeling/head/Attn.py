@@ -10,15 +10,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class CTC(nn.Module):
-    def __init__(self, in_channels, n_class, **kwargs):
-        super().__init__()
-        self.fc = nn.Linear(in_channels, n_class)
-
-    def forward(self, x):
-        return self.fc(x)
-
-
 class Attention(nn.Module):
 
     def __init__(self, in_channels, hidden_size, n_class, **kwargs):
@@ -31,7 +22,7 @@ class Attention(nn.Module):
     def _char_to_onehot(self, input_char, onehot_dim=38):
         input_char = input_char.unsqueeze(1)
         batch_size = input_char.size(0)
-        one_hot = torch.FloatTensor(batch_size, onehot_dim).zero_().to(input_char.device)
+        one_hot = torch.zeros(batch_size, onehot_dim).to(input_char.device)
         one_hot = one_hot.scatter_(1, input_char, 1)
         return one_hot
 
@@ -45,9 +36,9 @@ class Attention(nn.Module):
         batch_size = batch_H.size(0)
         num_steps = batch_max_length + 1  # +1 for [s] at end of sentence.
 
-        output_hiddens = torch.FloatTensor(batch_size, num_steps, self.hidden_size).fill_(0).to(batch_H.device)
-        hidden = (torch.FloatTensor(batch_size, self.hidden_size).fill_(0).to(batch_H.device),
-                  torch.FloatTensor(batch_size, self.hidden_size).fill_(0).to(batch_H.device))
+        output_hiddens = torch.zeros(batch_size, num_steps, self.hidden_size).to(batch_H.device)
+        hidden = (torch.zeros(batch_size, self.hidden_size).to(batch_H.device),
+                  torch.zeros(batch_size, self.hidden_size).to(batch_H.device))
 
         if self.training:
             for i in range(num_steps):
@@ -59,8 +50,8 @@ class Attention(nn.Module):
             probs = self.generator(output_hiddens)
 
         else:
-            targets = torch.LongTensor(batch_size).fill_(0).to(batch_H.device)  # [GO] token
-            probs = torch.FloatTensor(batch_size, num_steps, self.num_classes).fill_(0).to(batch_H.device)
+            targets = torch.zeros(batch_size, dtype=torch.long).to(batch_H.device)  # [GO] token
+            probs = torch.zeros(batch_size, num_steps, self.num_classes).to(batch_H.device)
 
             for i in range(num_steps):
                 char_onehots = self._char_to_onehot(targets, onehot_dim=self.num_classes)
@@ -68,7 +59,7 @@ class Attention(nn.Module):
                 probs_step = self.generator(hidden[0])
                 probs[:, i, :] = probs_step
                 _, next_input = probs_step.max(1)
-                if next_input[0] == 1: # meet end-of-sentence token
+                if next_input[0] == 1:  # meet end-of-sentence token
                     break
                 targets = next_input
 

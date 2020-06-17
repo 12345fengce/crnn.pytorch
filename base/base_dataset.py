@@ -51,13 +51,13 @@ class BaseDataSet(Dataset):
         raise NotImplementedError
 
     def __getitem__(self, index):
-        img, label = self.get_sample(index)
-        img = self.apply_pre_processes(img)
+        data = self.get_sample(index)
+        data['img'] = self.apply_pre_processes(data['img'])
         if self.transform is not None:
-            img = Image.fromarray(img)
-            img = self.transform(img)
+            data['img'] = Image.fromarray(data['img'])
+            data['img'] = self.transform(data['img'])
             # img.sub_(0.5).div_(0.5)
-        return img, label
+        return data
 
     def __len__(self):
         return len(self.data_list)

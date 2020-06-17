@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class TPS_SpatialTransformerNetwork(nn.Module):
+class TPS(nn.Module):
     """ Rectification Network of RARE, namely TPS based STN """
 
     def __init__(self, num_fiducial, input_size, I_r_size=None, in_channels=1, **kwargs):
@@ -17,7 +17,7 @@ class TPS_SpatialTransformerNetwork(nn.Module):
         output:
             batch_I_r: rectified image [batch_size x I_channel_num x I_r_height x I_r_width]
         """
-        super(TPS_SpatialTransformerNetwork, self).__init__()
+        super().__init__()
         self.F = num_fiducial
         self.I_size = input_size
         self.I_r_size = I_r_size if I_r_size is not None else input_size  # = (I_r_height, I_r_width)

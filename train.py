@@ -6,30 +6,32 @@ import os
 
 def main(config):
     import torch
-    from torch.nn import CTCLoss
 
-    from models import get_model
+    from modeling import build_model
     from data_loader import get_dataloader
     from trainer import Trainer
     from utils import CTCLabelConverter, AttnLabelConverter, load
-
+    from modeling.losses.CTCLoss import CTCLoss
+    from modeling.losses.AttnLoss import AttnLoss
     if os.path.isfile(config['dataset']['alphabet']):
         config['dataset']['alphabet'] = ''.join(load(config['dataset']['alphabet']))
 
-    prediction_type = config['arch']['args']['prediction']['type']
+    prediction_type = config['arch']['head']['type']
 
     # loss 设置
     if prediction_type == 'CTC':
-        criterion = CTCLoss(blank=0, zero_infinity=True)
+        criterion = CTCLoss()
         converter = CTCLabelConverter(config['dataset']['alphabet'])
-    elif prediction_type == 'Attn':
-        criterion = torch.nn.CrossEntropyLoss(ignore_index=0)
+    elif prediction_type == 'Attention':
+        criterion = AttnLoss()
         converter = AttnLabelConverter(config['dataset']['alphabet'])
     else:
         raise NotImplementedError
     img_channel = 3 if config['dataset']['train']['dataset']['args']['img_mode'] != 'GRAY' else 1
-    model = get_model(img_channel, len(converter.character), config['arch']['args'])
-
+    config['arch']['backbone']['in_channels'] = img_channel
+    config['arch']['head']['n_class'] = len(converter.character)
+    # model = get_model(img_channel, len(converter.character), config['arch']['args'])
+    model = build_model(config['arch']['type'], **config['arch'])
     img_h, img_w = 32, 100
     for process in config['dataset']['train']['dataset']['args']['pre_processes']:
         if process['type'] == "Resize":

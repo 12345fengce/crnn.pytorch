@@ -7,9 +7,9 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
-from models.modules.basic import BasicConv
+from modeling.basic import BasicConv
 
-from models.modules.seg.resnet import *
+from modeling.modules.seg.resnet import *
 
 
 class FPN(nn.Module):
@@ -75,16 +75,16 @@ class ResNetFPN(nn.Module):
         super().__init__()
         self.k = kwargs.get('k', 1)
         backbone_dict = {
-            'resnet18': {'models': resnet18, 'out': [64, 128, 256, 512]},
-            'deformable_resnet18': {'models': deformable_resnet18, 'out': [64, 128, 256, 512]},
-            'resnet34': {'models': resnet34, 'out': [64, 128, 256, 512]},
-            'resnet50': {'models': resnet50, 'out': [256, 512, 1024, 2048]},
-            'deformable_resnet50': {'models': deformable_resnet50, 'out': [256, 512, 1024, 2048]},
-            'resnet101': {'models': resnet101, 'out': [256, 512, 1024, 2048]},
-            'resnet152': {'models': resnet152, 'out': [256, 512, 1024, 2048]},
+            'resnet18': {'modeling': resnet18, 'out': [64, 128, 256, 512]},
+            'deformable_resnet18': {'modeling': deformable_resnet18, 'out': [64, 128, 256, 512]},
+            'resnet34': {'modeling': resnet34, 'out': [64, 128, 256, 512]},
+            'resnet50': {'modeling': resnet50, 'out': [256, 512, 1024, 2048]},
+            'deformable_resnet50': {'modeling': deformable_resnet50, 'out': [256, 512, 1024, 2048]},
+            'resnet101': {'modeling': resnet101, 'out': [256, 512, 1024, 2048]},
+            'resnet152': {'modeling': resnet152, 'out': [256, 512, 1024, 2048]},
         }
         assert backbone in backbone_dict, f'backbone must in: {backbone_dict}'
-        backbone_model, backbone_out = backbone_dict[backbone]['models'], backbone_dict[backbone]['out']
+        backbone_model, backbone_out = backbone_dict[backbone]['modeling'], backbone_dict[backbone]['out']
         self.backbone = backbone_model(pretrained=pretrained)
         self.segmentation_head = FPN(backbone_out)
         self.out_channels = 1

@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2020/4/11 10:29
 # @Author  : zhoujun
-from torch import nn
-from models.modules.basic import *
+from modeling.basic import *
 
 
 class BasicBlock(nn.Module):

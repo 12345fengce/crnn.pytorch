@@ -15,7 +15,7 @@ class BaseTrainer:
     def __init__(self, config, model, criterion, sample_input):
         config['trainer']['output_dir'] = os.path.join(str(pathlib.Path(os.path.abspath(__name__)).parent),
                                                        config['trainer']['output_dir'])
-        config['name'] = config['name'] + '_' + model.model_name
+        config['name'] = config['name'] + '_' + model.name
         self.save_dir = os.path.join(config['trainer']['output_dir'], config['name'])
         self.checkpoint_dir = os.path.join(self.save_dir, 'checkpoint')
         self.alphabet = config['dataset']['alphabet']
@@ -95,7 +95,7 @@ class BaseTrainer:
         try:
             # self._testval(max_step=10)
             for epoch in range(self.start_epoch + 1, self.epochs + 1):
-                self.epoch_result = self._train_epoch(epoch)
+                self._train_epoch(epoch)
                 self.scheduler.step()
                 self._on_epoch_finish()
         except:
@@ -119,6 +119,15 @@ class BaseTrainer:
         eval logic for an epoch
         :param epoch: Current epoch number
         """
+        raise NotImplementedError
+
+    def _before_step(self, batch):
+        raise NotImplementedError
+
+    def _run_step(self, batch):
+        raise NotImplementedError
+
+    def _after_step(self, batch_out):
         raise NotImplementedError
 
     def _on_epoch_finish(self):

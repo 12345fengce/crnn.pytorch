@@ -27,7 +27,7 @@ class ImageDataset(BaseDataSet):
         super().__init__(data_path, img_mode, num_label, ignore_chinese_punctuation, remove_blank, pre_processes, transform, **kwargs)
 
     def load_data(self, data_path: str) -> list:
-        return get_datalist(data_path,self.num_label)
+        return get_datalist(data_path, self.num_label)
 
     def get_sample(self, index):
         img_path, label = self.data_list[index]
@@ -38,7 +38,7 @@ class ImageDataset(BaseDataSet):
             label = punctuation_mend(label)
         if self.remove_blank:
             label = label.replace(' ', '')
-        return img, label
+        return {'img': img, 'label': label}
 
 
 class LmdbDataset(BaseDataSet):
@@ -163,7 +163,7 @@ if __name__ == '__main__':
     dataset_args = config['dataset']['validate']['dataset']['args']
     dataset_args['num_label'] = 80
     dataset_args['alphabet'] = config['dataset']['alphabet']
-    dataset = ImageDataset(transform=train_transfroms,**dataset_args)
+    dataset = ImageDataset(transform=train_transfroms, **dataset_args)
     data_loader = DataLoader(dataset=dataset, batch_size=1, shuffle=True, num_workers=2)
     for i, (images, labels) in enumerate(tqdm(data_loader)):
         pass

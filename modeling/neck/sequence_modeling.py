@@ -1,6 +1,8 @@
 from torch import nn
 
-from models.modules.basic import BasicConv
+from modeling.basic import BasicConv
+
+__all__ = ['RNNDecoder', 'CNNDecoder', 'Reshape']
 
 
 class BidirectionalGRU(nn.Module):
@@ -36,7 +38,7 @@ class RNNDecoder(nn.Module):
         super(RNNDecoder, self).__init__()
         self.lstm = nn.Sequential(
             BidirectionalLSTM(in_channels, hidden_size, True),
-            BidirectionalLSTM(hidden_size , hidden_size, True)
+            BidirectionalLSTM(hidden_size, hidden_size, True)
         )
         self.out_channels = hidden_size
 
@@ -62,4 +64,16 @@ class CNNDecoder(nn.Module):
         x = self.cnn_decoder(x)
         x = x.squeeze(dim=2)
         x = x.permute(0, 2, 1)
+        return x
+
+
+class Reshape(nn.Module):
+    def __init__(self, in_channels, **kwargs):
+        super().__init__()
+        self.out_channels = in_channels
+
+    def forward(self, x):
+        B, C, H, W = x.shape
+        x = x.reshape(B, C, H * W)
+        x = x.permute((0, 2, 1))  # (NTC)(batch, width, channel)s
         return x

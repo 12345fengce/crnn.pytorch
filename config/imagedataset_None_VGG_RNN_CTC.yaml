@@ -1,23 +1,20 @@
 name: crnn
 base: ['config/image_dataset.yaml']
 arch:
-  type: crnnModel
-  args:
-    transformation:
-      type: None
-      args:
-        input_size: [32,320]
-        num_fiducial: 20
-    feature_extraction:
-      type: VGG
-      args:
-        conv_type: BasicConv
-    sequence_model:
-      type: RNN
-      args:
-        hidden_size: 256
-    prediction:
-      type: CTC
+  type: Model
+  trans:
+    type: None # TPS or None
+    input_size: [32,320]
+    num_fiducial: 20
+  backbone:
+    type: VGG
+    conv_type: BasicConv
+  neck:
+    type: RNNDecoder # RNNDecoder or CNNDecoder or Reshape, Reshape 表示不使用decode
+    hidden_size: 256
+  head:
+    type: CTC # CTC or Attention, Attention 必须和 RNNDecoder一起使用
+    hidden_size: 256
 optimizer:
   type: Adam
   args:
@@ -32,40 +29,40 @@ trainer:
   gpus:
     - 0
   epochs: 10
-  display_interval: 1
+  display_interval: 10
   resume_checkpoint: ''
   finetune_checkpoint: ''
   output_dir: output
-  tensorboard: false
+  tensorboard: true
 dataset:
-  alphabet: dict.txt
+  alphabet: D:\code\OCR\PytorchOCR\torchocr\datasets\alphabets\digit.txt
   train:
     dataset:
       type: ImageDataset # 数据集类型
       args:
         data_path:
-          - - D:\dataset\icdar2015\recognition\train.txt
+          - - D:\dataset\test_crnn_digit\train.txt
         data_ratio:
           - 1.0
         pre_processes: # 数据的预处理过程，包含augment和预处理
-#          - type: IaaAugment # 使用imgaug进行变换
-#          - type: RandomAug # 进行变换扭曲变换
+          #          - type: IaaAugment # 使用imgaug进行变换
+          #          - type: RandomAug # 进行变换扭曲变换
           - type: Resize
             args:
               img_h: 32
-              img_w: 320
+              img_w: 120
               pad: true
               random_crop: false
         transforms: # 对图片进行的变换方式
-          - type: ColorJitter
-            args:
-              brightness: 0.5
+          #          - type: ColorJitter
+          #            args:
+          #              brightness: 0.5
           - type: ToTensor
             args: {}
-          - type: Normalize
-            args:
-              mean: [0.485, 0.456, 0.406]
-              std: [0.229, 0.224, 0.225]
+        #          - type: Normalize
+        #            args:
+        #              mean: [0.485, 0.456, 0.406]
+        #              std: [0.229, 0.224, 0.225]
         img_mode: RGB
         ignore_chinese_punctuation: true
         remove_blank: true
@@ -79,21 +76,21 @@ dataset:
       type: ImageDataset
       args:
         data_path: # [文件，文件]，每个文件格式为 img_path \t gt
-          - D:\dataset\icdar2015\recognition\test.txt
+          - D:\dataset\test_crnn_digit\val.txt
         pre_processes:
           - type: Resize
             args:
               img_h: 32
-              img_w: 320
+              img_w: 120
               pad: true
               random_crop: false
         transforms:
           - type: ToTensor
             args: {}
-          - type: Normalize
-            args:
-              mean: [0.485, 0.456, 0.406]
-              std: [0.229, 0.224, 0.225]
+        #          - type: Normalize
+        #            args:
+        #              mean: [0.485, 0.456, 0.406]
+        #              std: [0.229, 0.224, 0.225]
         img_mode: RGB
         ignore_chinese_punctuation: true
         remove_blank: true

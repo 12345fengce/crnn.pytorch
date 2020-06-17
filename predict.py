@@ -110,7 +110,7 @@ def save(net, input, save_path):
 
 
 if __name__ == '__main__':
-    from models import get_model
+    from modeling import get_model
     import time
     from matplotlib import pyplot as plt
     from matplotlib.font_manager import FontProperties
