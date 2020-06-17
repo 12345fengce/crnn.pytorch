@@ -13,6 +13,7 @@ from utils import setup_logger, save
 
 class BaseTrainer:
     def __init__(self, config, model, criterion, sample_input):
+        # init ckpt path
         config['trainer']['output_dir'] = os.path.join(str(pathlib.Path(os.path.abspath(__name__)).parent),
                                                        config['trainer']['output_dir'])
         config['name'] = config['name'] + '_' + model.name
@@ -53,13 +54,6 @@ class BaseTrainer:
             self.with_cuda = False
             self.logger.info(f'train with pytorch {torch.__version__} and cpu')
             self.device = torch.device("cpu")
-
-        self.metrics = {'val_acc': 0,
-                        'train_loss': float('inf'),
-                        'best_acc_epoch': 0,
-                        'train_acc': 0,
-                        'norm_edit_dis': 0,
-                        'best_ned_epoch': 0}
 
         self.optimizer = self._initialize('optimizer', torch.optim, model.parameters())
 

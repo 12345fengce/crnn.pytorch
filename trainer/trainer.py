@@ -25,6 +25,12 @@ class Trainer(BaseTrainer):
             self.logger.info(f'train dataset has {len(self.train_loader.dataset)} samples,{len(self.train_loader)} in dataloader')
 
         self.run_time_dict = {}
+        self.metrics = {'val_acc': 0,
+                        'train_loss': float('inf'),
+                        'best_acc_epoch': 0,
+                        'train_acc': 0,
+                        'norm_edit_dis': 0,
+                        'best_ned_epoch': 0}
 
     def _train_epoch(self, epoch):
         self.model.train()
