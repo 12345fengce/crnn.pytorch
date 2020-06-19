@@ -3,10 +3,10 @@
 # @Author  : zhoujun
 
 from .CTC import CTC
-from .Attn import Attention
+from .Attn import Attn
 
 __all__ = ['build_head']
-support_head = ['CTC', 'Attention']
+support_head = ['CTC', 'Attn']
 
 
 def build_head(head_name, **kwargs):

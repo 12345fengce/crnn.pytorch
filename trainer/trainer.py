@@ -77,7 +77,7 @@ class Trainer(BaseTrainer):
         if self.model.head_type == 'CTC':
             preds = self.model(batch['img'])[0]
             loss = self.criterion(preds, batch)
-        elif self.model.head_type == 'Attention':
+        elif self.model.head_type == 'Attn':
             preds = self.model(batch['img'], targets[:, :-1])[0]
             loss = self.criterion(preds, batch)
         else:
@@ -123,6 +123,7 @@ class Trainer(BaseTrainer):
         self.model.eval()
         n_correct = 0
         norm_edit_dis = 0
+        show_str = []
         for i, (images, labels) in enumerate(tqdm(self.validate_loader, desc=dest)):
             if max_step is not None and i >= max_step:
                 break
@@ -132,7 +133,8 @@ class Trainer(BaseTrainer):
             batch_dict = self.accuracy_batch(preds, labels)
             n_correct += batch_dict['n_correct']
             norm_edit_dis += batch_dict['norm_edit_dis']
-        return {'n_correct': n_correct, 'norm_edit_dis': norm_edit_dis}
+            show_str.extend(batch_dict['show_str'])
+        return {'n_correct': n_correct, 'norm_edit_dis': norm_edit_dis, 'show_str': show_str}
 
     def _on_epoch_finish(self):
         net_save_path = f'{self.checkpoint_dir}/model_latest.pth'
@@ -146,6 +148,7 @@ class Trainer(BaseTrainer):
             if self.tensorboard_enable:
                 self.writer.add_scalar('EVAL/acc', val_acc, self.global_step)
                 self.writer.add_scalar('EVAL/edit_distance', norm_edit_dis, self.global_step)
+                self.writer.add_text('EVAL/pred_gt', ' || '.join(epoch_eval_dict['show_str'][:10]), self.global_step)
 
             self.logger.info(f"[{self.run_time_dict['epoch']}/{self.epochs}], val_acc: {val_acc:.6f}, "
                              f"norm_edit_dis: {norm_edit_dis}")

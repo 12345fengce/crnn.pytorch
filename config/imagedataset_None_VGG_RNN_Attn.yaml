@@ -13,10 +13,9 @@ arch:
     type: RNNDecoder # RNNDecoder or CNNDecoder or Reshape, Reshape 表示不使用decode
     hidden_size: 256
   head:
-    type: CTC # CTC or Attn, Attn 必须和 RNNDecoder一起使用
+    type: Attn # CTC or Attn, Attn 必须和 RNNDecoder一起使用
 loss:
-  type: CTCLoss
-  blank: 0
+  type: AttnLoss
 
 optimizer:
   type: Adam # Adagrad

@@ -10,10 +10,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class Attention(nn.Module):
+class Attn(nn.Module):
 
     def __init__(self, in_channels, hidden_size, n_class, **kwargs):
-        super(Attention, self).__init__()
+        super(Attn, self).__init__()
         self.attention_cell = AttentionCell(in_channels, hidden_size, n_class)
         self.hidden_size = hidden_size
         self.num_classes = n_class

@@ -64,7 +64,7 @@ class Model(nn.Module):
         # 预测阶段
         if self.head_type == 'CTC':
             y = self.head(y)
-        elif self.head_type == 'Attention':
+        elif self.head_type == 'Attn':
             y = self.head(y, text, self.batch_max_length)
         else:
             raise NotImplementedError

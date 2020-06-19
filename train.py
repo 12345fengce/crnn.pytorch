@@ -20,7 +20,7 @@ def main(config):
     criterion = build_loss(config['loss'])
     if prediction_type == 'CTC':
         converter = CTCLabelConverter(config['dataset']['alphabet'])
-    elif prediction_type == 'Attention':
+    elif prediction_type == 'Attn':
         converter = AttnLabelConverter(config['dataset']['alphabet'])
     else:
         raise NotImplementedError
@@ -52,7 +52,7 @@ def main(config):
 def init_args():
     import argparse
     parser = argparse.ArgumentParser(description='crnn.pytorch')
-    parser.add_argument('--config_file', default='config/imagedataset_None_VGG_RNN_CTC.yaml', type=str)
+    parser.add_argument('--config_file', default='config/imagedataset_None_VGG_RNN_CTC_local.yaml', type=str)
     args = parser.parse_args()
     return args
 
