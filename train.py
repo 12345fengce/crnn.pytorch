@@ -17,11 +17,10 @@ def main(config):
     prediction_type = config['arch']['head']['type']
 
     # loss 设置
+    criterion = build_loss(config['loss'])
     if prediction_type == 'CTC':
-        criterion = build_loss('CTCLoss')
         converter = CTCLabelConverter(config['dataset']['alphabet'])
     elif prediction_type == 'Attention':
-        criterion = build_loss('AttnLoss')
         converter = AttnLabelConverter(config['dataset']['alphabet'])
     else:
         raise NotImplementedError
@@ -29,7 +28,7 @@ def main(config):
     config['arch']['backbone']['in_channels'] = img_channel
     config['arch']['head']['n_class'] = len(converter.character)
     # model = get_model(img_channel, len(converter.character), config['arch']['args'])
-    model = build_model(config['arch']['type'], **config['arch'])
+    model = build_model(config['arch'])
     img_h, img_w = 32, 100
     for process in config['dataset']['train']['dataset']['args']['pre_processes']:
         if process['type'] == "Resize":

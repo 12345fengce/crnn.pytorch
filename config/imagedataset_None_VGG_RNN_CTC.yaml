@@ -14,11 +14,14 @@ arch:
     hidden_size: 256
   head:
     type: CTC # CTC or Attention, Attention 必须和 RNNDecoder一起使用
-    hidden_size: 256
+loss:
+  type: CTCLoss
+  blank: 0
+
 optimizer:
-  type: SGD # Adagrad
+  type: Adam # Adagrad
   args:
-    lr: 0.01
+    lr: 0.001
 lr_scheduler:
   type: StepLR
   args:
@@ -35,13 +38,13 @@ trainer:
   output_dir: output
   tensorboard: true
 dataset:
-  alphabet: D:\code\OCR\PytorchOCR\torchocr\datasets\alphabets\digit.txt
+  alphabet: digit.txt
   train:
     dataset:
       type: ImageDataset # 数据集类型
       args:
         data_path:
-          - - D:\dataset\test_crnn_digit\train.txt
+          - - path/train.txt
         data_ratio:
           - 1.0
         pre_processes: # 数据的预处理过程，包含augment和预处理
@@ -76,7 +79,7 @@ dataset:
       type: ImageDataset
       args:
         data_path: # [文件，文件]，每个文件格式为 img_path \t gt
-          - D:\dataset\test_crnn_digit\val.txt
+          - path/val.txt
         pre_processes:
           - type: Resize
             args:

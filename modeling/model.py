@@ -32,6 +32,7 @@ class Model(nn.Module):
 
     def get_batch_max_length(self, x):
         # 特征提取阶段
+
         if self.trans is not None:
             x = self.trans(x)
         x = self.backbone(x)

@@ -118,7 +118,7 @@ if __name__ == '__main__':
     font = FontProperties(fname=r"msyh.ttc", size=14)
 
     img_path = '0.jpg'
-    model_path = '/data1/gcz/ocr/crnn.pytorch/output/crnn_None_VGG_RNN_Attn/checkpoint/model_latest.pth'
+    model_path = 'crnn_None_VGG_RNN_Attn/checkpoint/model_latest.pth'
 
     crnn_net = PytorchNet(model_path=model_path, gpu_id=0)
     start = time.time()
